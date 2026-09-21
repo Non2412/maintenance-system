@@ -4,16 +4,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Wrench, ClipboardList, HardHat, ShieldCheck } from "lucide-react";
+import { Wrench, ClipboardList, HardHat, ShieldCheck, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 
-type Role = "technician" | "requester";
+type Role = "technician" | "requester" | "admin";
 
 const Login = () => {
   const navigate = useNavigate();
   const [role, setRole] = useState<Role>("technician");
+  const roleCredentials: Record<Role, { username: string; password: string }> = {
+    technician: { username: "somsak.t", password: "demo1234" },
+    requester: { username: "nophon.r", password: "demo1234" },
+    admin: { username: "admin", password: "demo1234" },
+  };
   const [username, setUsername] = useState("somsak.t");
   const [password, setPassword] = useState("demo1234");
+
+  const handleRoleChange = (newRole: Role) => {
+    setRole(newRole);
+    setUsername(roleCredentials[newRole].username);
+    setPassword(roleCredentials[newRole].password);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,18 +32,23 @@ const Login = () => {
       toast.error("กรุณากรอกชื่อผู้ใช้และรหัสผ่าน");
       return;
     }
+    const userMap: Record<Role, { emp_id: string; name: string; department: string }> = {
+      technician: { emp_id: "TECH001", name: "สมศักดิ์ ช่างไฟ", department: "Maintenance" },
+      requester:  { emp_id: "REQ042",  name: "นภดล ฝ่ายผลิต",    department: "ฝ่ายผลิต" },
+      admin:      { emp_id: "ADMIN001", name: "ผู้จัดการฝ่ายซ่อมบำรุง", department: "Management" },
+    };
     sessionStorage.setItem(
       "fixflow_user",
       JSON.stringify({
-        emp_id: role === "technician" ? "TECH001" : "REQ042",
-        name: role === "technician" ? "สมศักดิ์ ช่างไฟ" : "นภดล ฝ่ายผลิต",
+        ...userMap[role],
         role,
-        department: role === "technician" ? "Maintenance" : "ฝ่ายผลิต",
-        skills: ["electrical", "facility"],
+        skills: role === "technician" ? ["electrical", "facility"] : [],
       }),
     );
-    toast.success(`ยินดีต้อนรับ ${role === "technician" ? "ช่างซ่อมบำรุง" : "ผู้แจ้งซ่อม"}`);
-    navigate(role === "technician" ? "/board" : "/request");
+    const roleLabel = { technician: "ช่างซ่อมบำรุง", requester: "ผู้แจ้งซ่อม", admin: "ผู้บริหาร" };
+    toast.success(`ยินดีต้อนรับ ${roleLabel[role]}`);
+    const navTarget = role === "technician" ? "/board" : role === "admin" ? "/admin/dashboard" : "/request";
+    navigate(navTarget);
   };
 
   return (
@@ -99,20 +115,27 @@ const Login = () => {
           </header>
 
           {/* Role selector */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <RoleCard
               active={role === "technician"}
-              onClick={() => setRole("technician")}
+              onClick={() => handleRoleChange("technician")}
               icon={<Wrench className="h-6 w-6" />}
               title="ช่างซ่อมบำรุง"
               subtitle="Technician"
             />
             <RoleCard
               active={role === "requester"}
-              onClick={() => setRole("requester")}
+              onClick={() => handleRoleChange("requester")}
               icon={<ClipboardList className="h-6 w-6" />}
               title="ผู้แจ้งซ่อม"
               subtitle="Requester"
+            />
+            <RoleCard
+              active={role === "admin"}
+              onClick={() => handleRoleChange("admin")}
+              icon={<BarChart3 className="h-6 w-6" />}
+              title="ผู้บริหาร"
+              subtitle="Admin"
             />
           </div>
 

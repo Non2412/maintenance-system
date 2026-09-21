@@ -9,6 +9,7 @@ import AssessmentForm from "./pages/AssessmentForm.tsx";
 import RequestForm from "./pages/RequestForm.tsx";
 import NotificationCenter from "./pages/NotificationCenter.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import AdminDashboard from "./pages/AdminDashboard.tsx";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/request" element={<RequestForm />} />
           <Route path="/notifications" element={<NotificationCenter />} />
           <Route path="/assessment/:id" element={<AssessmentForm />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
