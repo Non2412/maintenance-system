@@ -287,6 +287,531 @@ export const MOCK_SPARE_PARTS: SparePart[] = [
   { part_id: "SP-BLT-045", name: "สายพาน V-Belt A-42", stock: 9, unit: "เส้น" },
 ];
 
+// ─── Spare Parts Extended ─────────────────────────────────────────────────────
+
+export type SparePartCategory =
+  | "hydraulic"
+  | "electrical"
+  | "bearing"
+  | "belt"
+  | "filter"
+  | "pneumatic"
+  | "lubricant"
+  | "fastener"
+  | "sensor"
+  | "other";
+
+export const SPARE_PART_CATEGORY_LABEL: Record<SparePartCategory, string> = {
+  hydraulic: "ไฮดรอลิก",
+  electrical: "ไฟฟ้า",
+  bearing: "ตลับลูกปืน",
+  belt: "สายพาน",
+  filter: "ไส้กรอง",
+  pneumatic: "ระบบลม",
+  lubricant: "น้ำมัน/สารหล่อลื่น",
+  fastener: "น็อต/สกรู",
+  sensor: "เซ็นเซอร์",
+  other: "อื่น ๆ",
+};
+
+export interface SparePartExtended {
+  part_id: string;
+  name: string;
+  category: SparePartCategory;
+  stock: number;
+  min_stock: number;
+  max_stock: number;
+  unit: string;
+  location: string;
+  unit_price: number;
+  supplier: string;
+  last_updated: string;
+  compatible_assets: string[];
+}
+
+export interface SparePartTransaction {
+  tx_id: string;
+  part_id: string;
+  part_name: string;
+  type: "issue" | "receive" | "adjust";
+  quantity: number;
+  related_request_id?: string;
+  performed_by: string;
+  note: string;
+  timestamp: string;
+}
+
+const _now = Date.now();
+const _d = (hoursBack: number) => new Date(_now - hoursBack * 3_600_000).toISOString();
+
+export const MOCK_SPARE_PARTS_EXTENDED: SparePartExtended[] = [
+  {
+    part_id: "SP-HYD-004",
+    name: "ซีลยางกันน้ำมัน 50mm",
+    category: "hydraulic",
+    stock: 24,
+    min_stock: 10,
+    max_stock: 50,
+    unit: "ชิ้น",
+    location: "ชั้น A-03",
+    unit_price: 85,
+    supplier: "Thai Seal Co., Ltd.",
+    last_updated: _d(2),
+    compatible_assets: ["MCH-PR-2041", "MCH-HYD-005"],
+  },
+  {
+    part_id: "SP-ELC-112",
+    name: "เบรกเกอร์ 3P 100A",
+    category: "electrical",
+    stock: 3,
+    min_stock: 4,
+    max_stock: 20,
+    unit: "ตัว",
+    location: "ชั้น B-01",
+    unit_price: 1250,
+    supplier: "Schneider Electric TH",
+    last_updated: _d(5),
+    compatible_assets: ["ELC-DB-5510", "ELC-DB-5520"],
+  },
+  {
+    part_id: "SP-BRG-201",
+    name: "ตลับลูกปืน 6204ZZ",
+    category: "bearing",
+    stock: 18,
+    min_stock: 8,
+    max_stock: 40,
+    unit: "ลูก",
+    location: "ชั้น A-05",
+    unit_price: 320,
+    supplier: "NSK Thailand",
+    last_updated: _d(1),
+    compatible_assets: ["CNV-ASSY-08", "MCH-MTR-110"],
+  },
+  {
+    part_id: "SP-FIL-088",
+    name: "ไส้กรองอากาศแอร์",
+    category: "filter",
+    stock: 12,
+    min_stock: 6,
+    max_stock: 30,
+    unit: "ชุด",
+    location: "ชั้น C-02",
+    unit_price: 450,
+    supplier: "Daikin Service TH",
+    last_updated: _d(10),
+    compatible_assets: ["AC-OFF-019", "AC-PROD-022"],
+  },
+  {
+    part_id: "SP-BLT-045",
+    name: "สายพาน V-Belt A-42",
+    category: "belt",
+    stock: 2,
+    min_stock: 5,
+    max_stock: 20,
+    unit: "เส้น",
+    location: "ชั้น A-04",
+    unit_price: 780,
+    supplier: "Gates Corporation TH",
+    last_updated: _d(8),
+    compatible_assets: ["CNV-ASSY-08", "MCH-PUMP-033"],
+  },
+  {
+    part_id: "SP-PNM-017",
+    name: "วาล์วลม 5/2 (สปริงกลับ)",
+    category: "pneumatic",
+    stock: 8,
+    min_stock: 4,
+    max_stock: 20,
+    unit: "ตัว",
+    location: "ชั้น B-03",
+    unit_price: 1100,
+    supplier: "SMC Thailand Co., Ltd.",
+    last_updated: _d(3),
+    compatible_assets: ["MCH-PR-2041", "ASSY-PNM-09"],
+  },
+  {
+    part_id: "SP-LUB-055",
+    name: "น้ำมันไฮดรอลิก ISO 46 (20L)",
+    category: "lubricant",
+    stock: 6,
+    min_stock: 3,
+    max_stock: 15,
+    unit: "ถัง",
+    location: "ชั้น D-01",
+    unit_price: 2200,
+    supplier: "PTT Lubricants",
+    last_updated: _d(24),
+    compatible_assets: ["MCH-PR-2041", "MCH-HYD-005", "MCH-CNC-12"],
+  },
+  {
+    part_id: "SP-ELC-220",
+    name: "คอนแทคเตอร์ 3P 40A",
+    category: "electrical",
+    stock: 0,
+    min_stock: 3,
+    max_stock: 12,
+    unit: "ตัว",
+    location: "ชั้น B-01",
+    unit_price: 890,
+    supplier: "Schneider Electric TH",
+    last_updated: _d(48),
+    compatible_assets: ["ELC-DB-5510", "CNV-ASSY-08"],
+  },
+  {
+    part_id: "SP-SNS-099",
+    name: "เซ็นเซอร์ Proximity Inductive 12mm",
+    category: "sensor",
+    stock: 5,
+    min_stock: 3,
+    max_stock: 15,
+    unit: "ตัว",
+    location: "ชั้น B-04",
+    unit_price: 1650,
+    supplier: "Omron Thailand",
+    last_updated: _d(6),
+    compatible_assets: ["MCH-CNC-12", "CNV-ASSY-08"],
+  },
+  {
+    part_id: "SP-BRG-315",
+    name: "ตลับลูกปืน 6306-2RS",
+    category: "bearing",
+    stock: 10,
+    min_stock: 5,
+    max_stock: 25,
+    unit: "ลูก",
+    location: "ชั้น A-05",
+    unit_price: 580,
+    supplier: "SKF Thailand",
+    last_updated: _d(12),
+    compatible_assets: ["MCH-PUMP-033", "MCH-MTR-110"],
+  },
+  {
+    part_id: "SP-FST-011",
+    name: "โบลต์ M12×50 สแตนเลส (แพ็ค 50)",
+    category: "fastener",
+    stock: 15,
+    min_stock: 5,
+    max_stock: 30,
+    unit: "แพ็ค",
+    location: "ชั้น C-05",
+    unit_price: 280,
+    supplier: "Thai Fastener Supply",
+    last_updated: _d(72),
+    compatible_assets: [],
+  },
+  {
+    part_id: "SP-HYD-022",
+    name: "ท่อไฮดรอลิก HP 3/8\" (1m)",
+    category: "hydraulic",
+    stock: 1,
+    min_stock: 4,
+    max_stock: 20,
+    unit: "เมตร",
+    location: "ชั้น A-03",
+    unit_price: 950,
+    supplier: "Parker Hannifin TH",
+    last_updated: _d(4),
+    compatible_assets: ["MCH-PR-2041", "MCH-HYD-005"],
+  },
+];
+
+export const MOCK_SPARE_PART_TRANSACTIONS: SparePartTransaction[] = [
+  {
+    tx_id: "TX-20260922-001",
+    part_id: "SP-HYD-004",
+    part_name: "ซีลยางกันน้ำมัน 50mm",
+    type: "issue",
+    quantity: 4,
+    related_request_id: "REQ-20260422-001",
+    performed_by: "สมศักดิ์ ช่างไฟ",
+    note: "เปลี่ยนซีลกระบอกสูบ Hydraulic Press Line 3",
+    timestamp: _d(1.5),
+  },
+  {
+    tx_id: "TX-20260922-002",
+    part_id: "SP-ELC-112",
+    part_name: "เบรกเกอร์ 3P 100A",
+    type: "issue",
+    quantity: 1,
+    related_request_id: "REQ-20260422-002",
+    performed_by: "สมศักดิ์ ช่างไฟ",
+    note: "เปลี่ยนเบรกเกอร์ตู้ควบคุม ELC-DB-5510",
+    timestamp: _d(0.5),
+  },
+  {
+    tx_id: "TX-20260921-003",
+    part_id: "SP-BRG-201",
+    part_name: "ตลับลูกปืน 6204ZZ",
+    type: "receive",
+    quantity: 10,
+    performed_by: "วิษณุ ช่างกล",
+    note: "รับเข้าจาก PO-2026-0489",
+    timestamp: _d(28),
+  },
+  {
+    tx_id: "TX-20260921-004",
+    part_id: "SP-BLT-045",
+    part_name: "สายพาน V-Belt A-42",
+    type: "issue",
+    quantity: 3,
+    related_request_id: "REQ-20260421-014",
+    performed_by: "วิษณุ ช่างกล",
+    note: "เปลี่ยนสายพานมอเตอร์ CNV-ASSY-08",
+    timestamp: _d(5),
+  },
+  {
+    tx_id: "TX-20260920-005",
+    part_id: "SP-LUB-055",
+    part_name: "น้ำมันไฮดรอลิก ISO 46 (20L)",
+    type: "receive",
+    quantity: 4,
+    performed_by: "วิษณุ ช่างกล",
+    note: "รับเข้าสต็อก",
+    timestamp: _d(50),
+  },
+  {
+    tx_id: "TX-20260920-006",
+    part_id: "SP-ELC-220",
+    part_name: "คอนแทคเตอร์ 3P 40A",
+    type: "issue",
+    quantity: 2,
+    related_request_id: "REQ-20260421-014",
+    performed_by: "สมศักดิ์ ช่างไฟ",
+    note: "เปลี่ยนคอนแทคเตอร์มอเตอร์สายพานลำเลียง",
+    timestamp: _d(52),
+  },
+  {
+    tx_id: "TX-20260919-007",
+    part_id: "SP-HYD-022",
+    part_name: "ท่อไฮดรอลิก HP 3/8\" (1m)",
+    type: "issue",
+    quantity: 3,
+    related_request_id: "REQ-20260422-001",
+    performed_by: "วิษณุ ช่างกล",
+    note: "เปลี่ยนท่อไฮดรอลิกที่รั่ว",
+    timestamp: _d(75),
+  },
+  {
+    tx_id: "TX-20260919-008",
+    part_id: "SP-SNS-099",
+    part_name: "เซ็นเซอร์ Proximity Inductive 12mm",
+    type: "receive",
+    quantity: 5,
+    performed_by: "สมศักดิ์ ช่างไฟ",
+    note: "รับเข้าจาก PO-2026-0495",
+    timestamp: _d(80),
+  },
+];
+
+// ─── Checksheet System ─────────────────────────────────────────────────────────
+
+export type ChecksheetColumnType =
+  | "checkbox"
+  | "pass_fail"
+  | "number"
+  | "text"
+  | "dropdown"
+  | "rating";
+
+export interface ChecksheetColumn {
+  col_id: string;
+  label: string;
+  type: ChecksheetColumnType;
+  options?: string[]; // for dropdown
+  required: boolean;
+  width?: "sm" | "md" | "lg";
+}
+
+export interface ChecksheetItem {
+  item_id: string;
+  order: number;
+  topic: string;
+  description?: string;
+  group?: string;
+}
+
+export interface ChecksheetTemplate {
+  template_id: string;
+  name: string;
+  description: string;
+  frequency: "daily" | "weekly" | "monthly" | "per_shift";
+  machine_type?: string;
+  items: ChecksheetItem[];
+  columns: ChecksheetColumn[];
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  active: boolean;
+}
+
+export interface ChecksheetCellValue {
+  item_id: string;
+  col_id: string;
+  value: string | boolean | number;
+}
+
+export interface ChecksheetRecord {
+  record_id: string;
+  template_id: string;
+  template_name: string;
+  completed_by: string;
+  department: string;
+  shift?: "A" | "B" | "C";
+  machine_id?: string;
+  values: ChecksheetCellValue[];
+  note?: string;
+  submitted_at: string;
+  status: "complete" | "partial" | "flagged";
+}
+
+export const MOCK_CHECKSHEET_TEMPLATES: ChecksheetTemplate[] = [
+  {
+    template_id: "CS-TPL-001",
+    name: "ตรวจสอบเครื่องจักรประจำวัน (เช้า)",
+    description: "เช็คชีทตรวจสอบสภาพเครื่องจักรก่อนเริ่มกะผลิต",
+    frequency: "daily",
+    machine_type: "เครื่องจักรทั่วไป",
+    created_by: "สมศักดิ์ ช่างไฟ",
+    created_at: new Date(_now - 30 * 24 * 3600_000).toISOString(),
+    updated_at: _d(48),
+    active: true,
+    columns: [
+      { col_id: "c1", label: "ผล", type: "pass_fail", required: true, width: "sm" },
+      { col_id: "c2", label: "ค่าที่วัดได้", type: "text", required: false, width: "md" },
+      { col_id: "c3", label: "หมายเหตุ", type: "text", required: false, width: "lg" },
+    ],
+    items: [
+      { item_id: "i1", order: 1, topic: "ระดับน้ำมันไฮดรอลิก", group: "ระบบไฮดรอลิก" },
+      { item_id: "i2", order: 2, topic: "ตรวจรอยรั่วท่อไฮดรอลิก", group: "ระบบไฮดรอลิก" },
+      { item_id: "i3", order: 3, topic: "แรงดันลม (ปกติ 6-7 bar)", group: "ระบบลม" },
+      { item_id: "i4", order: 4, topic: "วาล์วลม — ไม่มีรอยรั่ว", group: "ระบบลม" },
+      { item_id: "i5", order: 5, topic: "อุณหภูมิมอเตอร์ (<60°C)", group: "ระบบไฟฟ้า" },
+      { item_id: "i6", order: 6, topic: "สัญญาณไฟ Alarm — ปกติ", group: "ระบบไฟฟ้า" },
+      { item_id: "i7", order: 7, topic: "สายพาน — ไม่หย่อน/ไม่แตก", group: "กลไก" },
+      { item_id: "i8", order: 8, topic: "เสียงผิดปกติ — ไม่พบ", group: "กลไก" },
+      { item_id: "i9", order: 9, topic: "ทำความสะอาดรอบเครื่อง", group: "สุขลักษณะ" },
+      { item_id: "i10", order: 10, topic: "ตรวจอุปกรณ์ Safety Guard", group: "ความปลอดภัย" },
+    ],
+  },
+  {
+    template_id: "CS-TPL-002",
+    name: "PM รายสัปดาห์ — Hydraulic Press",
+    description: "บำรุงรักษาเชิงป้องกันรายสัปดาห์สำหรับ Hydraulic Press",
+    frequency: "weekly",
+    machine_type: "Hydraulic Press",
+    created_by: "วิษณุ ช่างกล",
+    created_at: new Date(_now - 60 * 24 * 3600_000).toISOString(),
+    updated_at: _d(72),
+    active: true,
+    columns: [
+      { col_id: "c1", label: "สถานะ", type: "pass_fail", required: true, width: "sm" },
+      { col_id: "c2", label: "ค่าที่วัด", type: "number", required: false, width: "sm" },
+      { col_id: "c3", label: "หน่วย", type: "dropdown", options: ["bar", "°C", "mm", "A", "-"], required: false, width: "sm" },
+      { col_id: "c4", label: "หมายเหตุ/Action", type: "text", required: false, width: "lg" },
+    ],
+    items: [
+      { item_id: "i1", order: 1, topic: "ตรวจสอบแรงดันระบบ (ปกติ 180-200 bar)", group: "ระบบไฮดรอลิก" },
+      { item_id: "i2", order: 2, topic: "เติมน้ำมันไฮดรอลิก (ถ้าต่ำกว่า Min)", group: "ระบบไฮดรอลิก" },
+      { item_id: "i3", order: 3, topic: "ตรวจสอบซีลกระบอกสูบ", group: "ระบบไฮดรอลิก" },
+      { item_id: "i4", order: 4, topic: "ทำความสะอาด Oil Filter", group: "ระบบไฮดรอลิก" },
+      { item_id: "i5", order: 5, topic: "ตรวจ Proximity Sensor ตำแหน่ง", group: "ระบบไฟฟ้า" },
+      { item_id: "i6", order: 6, topic: "วัดกระแสมอเตอร์ปั๊มไฮดรอลิก", group: "ระบบไฟฟ้า" },
+      { item_id: "i7", order: 7, topic: "อัดจาระบีแกนลูกสูบ", group: "การหล่อลื่น" },
+      { item_id: "i8", order: 8, topic: "ทดสอบการทำงานครบ 5 cycle", group: "ทดสอบการทำงาน" },
+    ],
+  },
+  {
+    template_id: "CS-TPL-003",
+    name: "ตรวจสอบความปลอดภัยประจำเดือน",
+    description: "เช็คชีทความปลอดภัยสำหรับผู้จัดการหรือหัวหน้างาน",
+    frequency: "monthly",
+    created_by: "ผู้จัดการฝ่ายซ่อมบำรุง",
+    created_at: new Date(_now - 90 * 24 * 3600_000).toISOString(),
+    updated_at: _d(168),
+    active: true,
+    columns: [
+      { col_id: "c1", label: "ผ่าน/ไม่ผ่าน", type: "pass_fail", required: true, width: "sm" },
+      { col_id: "c2", label: "คะแนน (1-5)", type: "rating", required: false, width: "sm" },
+      { col_id: "c3", label: "ข้อสังเกต", type: "text", required: false, width: "lg" },
+      { col_id: "c4", label: "ผู้รับผิดชอบ", type: "text", required: false, width: "md" },
+    ],
+    items: [
+      { item_id: "i1", order: 1, topic: "ป้ายความปลอดภัยครบถ้วน", group: "อุปกรณ์ความปลอดภัย" },
+      { item_id: "i2", order: 2, topic: "ถังดับเพลิงอยู่ในตำแหน่งและอยู่ในอายุการใช้งาน", group: "อุปกรณ์ความปลอดภัย" },
+      { item_id: "i3", order: 3, topic: "Safety Guard ครบทุกเครื่อง", group: "อุปกรณ์ความปลอดภัย" },
+      { item_id: "i4", order: 4, topic: "Emergency Stop ทำงานได้ปกติ", group: "ระบบ Emergency" },
+      { item_id: "i5", order: 5, topic: "Lock-out / Tag-out อุปกรณ์ครบ", group: "ระบบ Emergency" },
+      { item_id: "i6", order: 6, topic: "ทางหนีไฟไม่มีสิ่งกีดขวาง", group: "อาคาร/สถานที่" },
+      { item_id: "i7", order: 7, topic: "แสงสว่างในพื้นที่เพียงพอ", group: "อาคาร/สถานที่" },
+      { item_id: "i8", order: 8, topic: "พื้นไม่ลื่น / ไม่มีน้ำมันหก", group: "อาคาร/สถานที่" },
+      { item_id: "i9", order: 9, topic: "พนักงานสวม PPE ครบ", group: "บุคลากร" },
+      { item_id: "i10", order: 10, topic: "บันทึกการฝึกอบรมความปลอดภัยล่าสุด", group: "บุคลากร" },
+    ],
+  },
+];
+
+export const MOCK_CHECKSHEET_RECORDS: ChecksheetRecord[] = [
+  {
+    record_id: "REC-20260922-001",
+    template_id: "CS-TPL-001",
+    template_name: "ตรวจสอบเครื่องจักรประจำวัน (เช้า)",
+    completed_by: "สมศักดิ์ ช่างไฟ",
+    department: "ฝ่ายซ่อมบำรุง",
+    shift: "A",
+    submitted_at: _d(4),
+    status: "flagged",
+    values: [
+      { item_id: "i1", col_id: "c1", value: true },
+      { item_id: "i2", col_id: "c1", value: false },
+      { item_id: "i3", col_id: "c1", value: true },
+      { item_id: "i3", col_id: "c2", value: "6.5" },
+      { item_id: "i4", col_id: "c1", value: true },
+      { item_id: "i5", col_id: "c1", value: false },
+      { item_id: "i5", col_id: "c2", value: "72" },
+      { item_id: "i5", col_id: "c3", value: "อุณหภูมิสูงกว่าปกติ ต้องติดตาม" },
+      { item_id: "i6", col_id: "c1", value: true },
+      { item_id: "i7", col_id: "c1", value: true },
+      { item_id: "i8", col_id: "c1", value: true },
+      { item_id: "i9", col_id: "c1", value: true },
+      { item_id: "i10", col_id: "c1", value: true },
+    ],
+    note: "พบอุณหภูมิมอเตอร์สูง และรอยรั่วไฮดรอลิกเล็กน้อย แจ้งซ่อมแล้ว",
+  },
+  {
+    record_id: "REC-20260921-002",
+    template_id: "CS-TPL-001",
+    template_name: "ตรวจสอบเครื่องจักรประจำวัน (เช้า)",
+    completed_by: "วิษณุ ช่างกล",
+    department: "ฝ่ายซ่อมบำรุง",
+    shift: "A",
+    submitted_at: _d(28),
+    status: "complete",
+    values: [],
+    note: "",
+  },
+  {
+    record_id: "REC-20260920-003",
+    template_id: "CS-TPL-002",
+    template_name: "PM รายสัปดาห์ — Hydraulic Press",
+    completed_by: "วิษณุ ช่างกล",
+    department: "ฝ่ายซ่อมบำรุง",
+    machine_id: "MCH-PR-2041",
+    submitted_at: _d(48),
+    status: "complete",
+    values: [],
+  },
+  {
+    record_id: "REC-20260915-004",
+    template_id: "CS-TPL-003",
+    template_name: "ตรวจสอบความปลอดภัยประจำเดือน",
+    completed_by: "ผู้จัดการฝ่ายซ่อมบำรุง",
+    department: "Management",
+    submitted_at: _d(168),
+    status: "complete",
+    values: [],
+  },
+];
+
 export const PRIORITY_LABEL: Record<Priority, string> = {
   critical: "วิกฤติ",
   high: "สูง",
