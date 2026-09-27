@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Package,
@@ -14,6 +14,12 @@ import {
   Filter,
   TrendingDown,
   CheckCircle2,
+  Plus,
+  RefreshCw,
+  Boxes,
+  MapPin,
+  Tag,
+  Sparkles,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -159,6 +165,488 @@ function IssueReceiveModal({ part, mode, onClose, onConfirm }: IssueReceiveModal
   );
 }
 
+const CATEGORY_PREFIX_MAP: Record<SparePartCategory, string> = {
+  hydraulic: "HYD",
+  electrical: "ELC",
+  bearing: "BRG",
+  belt: "BLT",
+  filter: "FLT",
+  pneumatic: "PNM",
+  lubricant: "LUB",
+  fastener: "FST",
+  sensor: "SNS",
+  other: "GEN",
+};
+
+const COMMON_UNITS = ["ชิ้น", "ตัว", "ชุด", "เส้น", "ลิตร", "ม้วน", "กระป๋อง", "กล่อง"];
+const COMMON_ASSETS = ["MCH-PR-2041", "MCH-CNC-12", "MCH-HYD-005", "ELC-DB-5510", "CNV-ASSY-08", "MCH-PUMP-033", "MCH-MTR-110"];
+
+function generateNextPartId(category: SparePartCategory, existingParts: SparePartExtended[]): string {
+  const prefix = CATEGORY_PREFIX_MAP[category] || "GEN";
+  const regex = new RegExp(`^SP-${prefix}-(\\d+)`, "i");
+  let maxNum = 0;
+  for (const part of existingParts) {
+    const match = part.part_id.match(regex);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (num > maxNum) maxNum = num;
+    }
+  }
+  const nextNum = maxNum + 1;
+  return `SP-${prefix}-${String(nextNum).padStart(3, "0")}`;
+}
+
+interface CreateSparePartModalProps {
+  existingParts: SparePartExtended[];
+  onClose: () => void;
+  onSave: (newPart: SparePartExtended, initialStock: number) => void;
+}
+
+function CreateSparePartModal({ existingParts, onClose, onSave }: CreateSparePartModalProps) {
+  const [category, setCategory] = useState<SparePartCategory>("hydraulic");
+  const [partId, setPartId] = useState(() => generateNextPartId("hydraulic", existingParts));
+  const [name, setName] = useState("");
+  const [supplier, setSupplier] = useState("");
+  const [location, setLocation] = useState("");
+  const [unit, setUnit] = useState("ชิ้น");
+  const [unitPrice, setUnitPrice] = useState<string>("150");
+  const [stock, setStock] = useState<string>("10");
+  const [minStock, setMinStock] = useState<string>("5");
+  const [maxStock, setMaxStock] = useState<string>("50");
+  const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
+  const [customAssetInput, setCustomAssetInput] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const categories = Object.keys(SPARE_PART_CATEGORY_LABEL) as SparePartCategory[];
+
+  const handleCategoryChange = (newCat: SparePartCategory) => {
+    setCategory(newCat);
+    setPartId(generateNextPartId(newCat, existingParts));
+    setError(null);
+  };
+
+  const handleRegenerateId = () => {
+    setPartId(generateNextPartId(category, existingParts));
+    setError(null);
+  };
+
+  const toggleAsset = (assetId: string) => {
+    setSelectedAssets((prev) =>
+      prev.includes(assetId) ? prev.filter((a) => a !== assetId) : [...prev, assetId]
+    );
+  };
+
+  const handleAddCustomAsset = () => {
+    const trimmed = customAssetInput.trim().toUpperCase();
+    if (trimmed) {
+      if (!selectedAssets.includes(trimmed)) {
+        setSelectedAssets((prev) => [...prev, trimmed]);
+      }
+      setCustomAssetInput("");
+    }
+  };
+
+  const handleRemoveAsset = (assetId: string) => {
+    setSelectedAssets((prev) => prev.filter((a) => a !== assetId));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedId = partId.trim().toUpperCase();
+    const trimmedName = name.trim();
+    const numStock = parseInt(stock) || 0;
+    const numMin = parseInt(minStock) || 0;
+    const numMax = parseInt(maxStock) || 1;
+    const numPrice = parseFloat(unitPrice) || 0;
+
+    if (!trimmedId) {
+      setError("กรุณาระบุรหัสอะไหล่");
+      return;
+    }
+
+    if (existingParts.some((p) => p.part_id.toLowerCase() === trimmedId.toLowerCase())) {
+      setError(`รหัสอะไหล่ "${trimmedId}" มีอยู่ในระบบแล้ว กรุณาใช้รหัสอื่น`);
+      return;
+    }
+
+    if (!trimmedName) {
+      setError("กรุณากรอกชื่ออะไหล่");
+      return;
+    }
+
+    if (numStock < 0) {
+      setError("จำนวนสต็อกเริ่มต้นต้องไม่ติดลบ");
+      return;
+    }
+
+    if (numMin < 0 || numMax <= 0) {
+      setError("สต็อกขั้นต่ำและสูงสุดต้องถูกต้อง (มากกว่า 0)");
+      return;
+    }
+
+    if (numMin > numMax) {
+      setError("สต็อกขั้นต่ำ (Min) ต้องไม่มากกว่าสต็อกสูงสุด (Max)");
+      return;
+    }
+
+    if (numPrice < 0) {
+      setError("ราคาต่อหน่วยต้องไม่ติดลบ");
+      return;
+    }
+
+    const newPart: SparePartExtended = {
+      part_id: trimmedId,
+      name: trimmedName,
+      category,
+      stock: numStock,
+      min_stock: numMin,
+      max_stock: numMax,
+      unit: unit.trim() || "ชิ้น",
+      location: location.trim() || "คลังหลัก",
+      unit_price: numPrice,
+      supplier: supplier.trim() || "ไม่ระบุ",
+      last_updated: new Date().toISOString(),
+      compatible_assets: selectedAssets,
+    };
+
+    onSave(newPart, numStock);
+  };
+
+  const isDuplicateId = existingParts.some(
+    (p) => p.part_id.toLowerCase() === partId.trim().toLowerCase()
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-2xl rounded-2xl bg-card border shadow-2xl overflow-hidden flex flex-col my-8 max-h-[90vh]">
+        {/* Header */}
+        <div
+          className="px-6 py-4 flex items-center justify-between shrink-0"
+          style={{ background: "linear-gradient(135deg, #6d28d9 0%, #4338ca 100%)", color: "white" }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-xl bg-white/20 grid place-items-center shadow-inner">
+              <Plus className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-white/75 font-medium tracking-wide uppercase">New Spare Part</p>
+              <h2 className="font-bold text-white text-base">ลงทะเบียน / เพิ่มรายการอะไหล่ใหม่</h2>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/80 hover:text-white transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Form Body */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+          {error && (
+            <div className="rounded-lg bg-red-500/10 border border-red-500/30 p-3 text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Section 1: หมวดหมู่และรหัส */}
+          <div className="space-y-4 rounded-xl border bg-muted/20 p-4">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <Boxes className="h-3.5 w-3.5 text-primary" />
+              <span>ข้อมูลพื้นฐานและหมวดหมู่</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1.5 block">
+                  หมวดหมู่อะไหล่ <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={category}
+                  onChange={(e) => handleCategoryChange(e.target.value as SparePartCategory)}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary font-medium"
+                >
+                  {categories.map((c) => (
+                    <option key={c} value={c}>
+                      {SPARE_PART_CATEGORY_LABEL[c]} ({c})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-semibold text-foreground">
+                    รหัสอะไหล่ (Part ID) <span className="text-red-500">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleRegenerateId}
+                    className="text-[11px] text-primary hover:underline flex items-center gap-1 font-medium"
+                    title="สร้างรหัสใหม่อัตโนมัติ"
+                  >
+                    <RefreshCw className="h-3 w-3" /> แนะนำรหัส
+                  </button>
+                </div>
+                <div className="relative">
+                  <Input
+                    placeholder="เช่น SP-HYD-005"
+                    value={partId}
+                    onChange={(e) => {
+                      setPartId(e.target.value.toUpperCase());
+                      setError(null);
+                    }}
+                    className={cn("font-mono uppercase", isDuplicateId && "border-red-500 focus-visible:ring-red-500")}
+                  />
+                </div>
+                {isDuplicateId && (
+                  <p className="text-[11px] text-red-500 mt-1">⚠ รหัสนี้มีอยู่แล้วในระบบ</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="sm:col-span-2">
+                <label className="text-xs font-semibold text-foreground mb-1.5 block">
+                  ชื่อรายการอะไหล่ <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  placeholder="เช่น ซีลยางกันน้ำมัน 50mm, สายพานไทม์มิ่ง HTD 8M-1200"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1.5 block">
+                  ผู้จัดจำหน่าย / แหล่งจัดซื้อ (Supplier)
+                </label>
+                <Input
+                  placeholder="เช่น บจก. สยามซีล หรือ Schneider Electric"
+                  value={supplier}
+                  onChange={(e) => setSupplier(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1.5 block">
+                  ตำแหน่งจัดเก็บ (Storage Location)
+                </label>
+                <div className="relative">
+                  <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="เช่น ชั้น A-03, ตู้ B-01"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: สต็อกและราคา */}
+          <div className="space-y-4 rounded-xl border bg-muted/20 p-4">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <Tag className="h-3.5 w-3.5 text-primary" />
+              <span>การจัดการสต็อกและราคา</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1 block">
+                  สต็อกเริ่มต้น
+                </label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={stock}
+                  onChange={(e) => setStock(e.target.value)}
+                  className="font-mono text-center text-base font-bold"
+                />
+                <span className="text-[10px] text-muted-foreground mt-0.5 block">
+                  (ระบบจะบันทึกรับเข้าอัตโนมัติ)
+                </span>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1 block">
+                  จุดเตือนขั้นต่ำ (Min)
+                </label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={minStock}
+                  onChange={(e) => setMinStock(e.target.value)}
+                  className="font-mono text-center text-base text-amber-600 font-bold"
+                />
+                <span className="text-[10px] text-muted-foreground mt-0.5 block">
+                  เตือนเมื่อสต็อกต่ำกว่าค่านี้
+                </span>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1 block">
+                  สต็อกสูงสุด (Max)
+                </label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={maxStock}
+                  onChange={(e) => setMaxStock(e.target.value)}
+                  className="font-mono text-center text-base font-bold"
+                />
+                <span className="text-[10px] text-muted-foreground mt-0.5 block">
+                  ความจุสต็อกสูงสุด
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1.5 block">
+                  หน่วยนับ (Unit)
+                </label>
+                <div className="space-y-2">
+                  <Input
+                    placeholder="เช่น ชิ้น, ตัว, ชุด, เส้น"
+                    value={unit}
+                    onChange={(e) => setUnit(e.target.value)}
+                  />
+                  <div className="flex flex-wrap gap-1">
+                    {COMMON_UNITS.map((u) => (
+                      <button
+                        type="button"
+                        key={u}
+                        onClick={() => setUnit(u)}
+                        className={cn(
+                          "rounded-md border px-2 py-0.5 text-xs transition-colors",
+                          unit === u
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-background hover:bg-muted text-muted-foreground"
+                        )}
+                      >
+                        {u}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1.5 block">
+                  ราคาต่อหน่วย (บาท / {unit || "หน่วย"})
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-mono">฿</span>
+                  <Input
+                    type="number"
+                    min={0}
+                    step="any"
+                    placeholder="0"
+                    value={unitPrice}
+                    onChange={(e) => setUnitPrice(e.target.value)}
+                    className="pl-7 font-mono font-medium"
+                  />
+                </div>
+                <span className="text-[10px] text-muted-foreground mt-1 block">
+                  มูลค่ารวมเริ่มต้น: ฿{((parseInt(stock) || 0) * (parseFloat(unitPrice) || 0)).toLocaleString("th-TH")}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: เครื่องจักรที่รองรับ */}
+          <div className="space-y-3 rounded-xl border bg-muted/20 p-4">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              <span>เครื่องจักร/อุปกรณ์ที่ใช้ร่วมกันได้ (Compatible Assets)</span>
+            </div>
+
+            <div className="flex flex-wrap gap-1.5">
+              {COMMON_ASSETS.map((asset) => {
+                const isSelected = selectedAssets.includes(asset);
+                return (
+                  <button
+                    type="button"
+                    key={asset}
+                    onClick={() => toggleAsset(asset)}
+                    className={cn(
+                      "rounded-lg border px-2.5 py-1 text-xs font-mono transition-all flex items-center gap-1",
+                      isSelected
+                        ? "bg-violet-600 text-white border-violet-600 shadow-sm"
+                        : "bg-background hover:bg-muted text-muted-foreground"
+                    )}
+                  >
+                    <span>{asset}</span>
+                    {isSelected ? "✓" : "+"}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <Input
+                placeholder="ระบุรหัสเครื่องจักรอื่น ๆ เช่น CNC-05..."
+                value={customAssetInput}
+                onChange={(e) => setCustomAssetInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddCustomAsset();
+                  }
+                }}
+                className="font-mono text-xs uppercase"
+              />
+              <Button type="button" variant="outline" size="sm" onClick={handleAddCustomAsset}>
+                เพิ่ม
+              </Button>
+            </div>
+
+            {selectedAssets.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                <span className="text-xs text-muted-foreground self-center mr-1">เลือกแล้ว:</span>
+                {selectedAssets.map((asset) => (
+                  <span
+                    key={asset}
+                    className="inline-flex items-center gap-1 rounded-full bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300 px-2.5 py-0.5 text-xs font-mono"
+                  >
+                    {asset}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveAsset(asset)}
+                      className="hover:text-red-500 transition-colors ml-0.5"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex gap-3 pt-2">
+            <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
+              ยกเลิก
+            </Button>
+            <Button
+              type="submit"
+              className="flex-1 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-medium"
+              disabled={isDuplicateId || !name.trim()}
+            >
+              <Plus className="h-4 w-4 mr-1.5" /> บันทึกรายการอะไหล่
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function SpareParts() {
   const navigate = useNavigate();
   const [parts, setParts] = useState<SparePartExtended[]>(MOCK_SPARE_PARTS_EXTENDED);
@@ -167,6 +655,8 @@ export default function SpareParts() {
   const [catFilter, setCatFilter] = useState<SparePartCategory | "all">("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "out" | "low" | "ok">("all");
   const [modal, setModal] = useState<{ part: SparePartExtended; mode: "issue" | "receive" } | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [notification, setNotification] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"stock" | "history">("stock");
 
   const kpi = useMemo(() => {
@@ -208,6 +698,26 @@ export default function SpareParts() {
     setModal(null);
   };
 
+  const handleCreatePart = (newPart: SparePartExtended, initialStock: number) => {
+    setParts((prev) => [newPart, ...prev]);
+    if (initialStock > 0) {
+      const tx: SparePartTransaction = {
+        tx_id: `TX-${Date.now()}`,
+        part_id: newPart.part_id,
+        part_name: newPart.name,
+        type: "receive",
+        quantity: initialStock,
+        performed_by: "ผู้ดูแลระบบ",
+        note: "บันทึกสต็อกเริ่มต้น (สร้างรายการอะไหล่ใหม่)",
+        timestamp: new Date().toISOString(),
+      };
+      setTransactions((prev) => [tx, ...prev]);
+    }
+    setIsCreateModalOpen(false);
+    setNotification(`เพิ่มรายการอะไหล่ "${newPart.name}" (${newPart.part_id}) เรียบร้อยแล้ว`);
+    setTimeout(() => setNotification(null), 4500);
+  };
+
   const categories = Object.keys(SPARE_PART_CATEGORY_LABEL) as SparePartCategory[];
 
   return (
@@ -246,6 +756,22 @@ export default function SpareParts() {
       </header>
 
       <main className="flex-1 p-4 md:p-6 space-y-6 max-w-7xl mx-auto w-full">
+        {/* Notification Banner */}
+        {notification && (
+          <div className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 px-4 py-3 rounded-xl flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-2">
+            <div className="flex items-center gap-2.5">
+              <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+              <span className="text-sm font-medium">{notification}</span>
+            </div>
+            <button
+              onClick={() => setNotification(null)}
+              className="text-emerald-600 hover:text-emerald-800 transition-colors p-1"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
         {/* KPI Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
           {[
@@ -267,18 +793,38 @@ export default function SpareParts() {
           ))}
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-1 rounded-xl bg-muted p-1 w-fit">
-          {[{ key: "stock", label: "รายการ Stock", icon: <Package className="h-4 w-4" /> }, { key: "history", label: "ประวัติการเคลื่อนไหว", icon: <History className="h-4 w-4" /> }].map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setActiveTab(t.key as "stock" | "history")}
-              className={cn("rounded-lg px-4 py-2 text-sm font-medium transition-all flex items-center gap-2",
-                activeTab === t.key ? "bg-background shadow text-foreground" : "text-muted-foreground hover:text-foreground")}
+        {/* Tabs & Actions */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex gap-1 rounded-xl bg-muted p-1 w-fit">
+            {[{ key: "stock", label: "รายการ Stock", icon: <Package className="h-4 w-4" /> }, { key: "history", label: "ประวัติการเคลื่อนไหว", icon: <History className="h-4 w-4" /> }].map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setActiveTab(t.key as "stock" | "history")}
+                className={cn("rounded-lg px-4 py-2 text-sm font-medium transition-all flex items-center gap-2",
+                  activeTab === t.key ? "bg-background shadow text-foreground" : "text-muted-foreground hover:text-foreground")}
+              >
+                {t.icon}{t.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex gap-2 flex-wrap self-start sm:self-auto">
+            <Button
+              variant="outline"
+              onClick={() => navigate("/admin/spare-requests")}
+              className="border-amber-300 text-amber-800 bg-amber-50 hover:bg-amber-100 flex items-center gap-1.5 text-xs font-semibold"
             >
-              {t.icon}{t.label}
-            </button>
-          ))}
+              <ShieldAlert className="h-4 w-4 text-amber-600" />
+              <span>ความต้องการอะไหล่จากช่าง</span>
+            </Button>
+            <Button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-sm flex items-center gap-2 font-medium"
+            >
+              <Plus className="h-4 w-4" />
+              <span>สร้างรายการอะไหล่ใหม่</span>
+            </Button>
+          </div>
         </div>
 
         {activeTab === "stock" && (
@@ -327,7 +873,16 @@ export default function SpareParts() {
                   </thead>
                   <tbody>
                     {filtered.length === 0 ? (
-                      <tr><td colSpan={7} className="px-4 py-10 text-center text-muted-foreground text-sm">ไม่พบรายการอะไหล่</td></tr>
+                      <tr>
+                        <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
+                          <Package className="h-8 w-8 mx-auto mb-2 opacity-35" />
+                          <p className="font-semibold text-sm text-foreground">ไม่พบรายการอะไหล่</p>
+                          <p className="text-xs text-muted-foreground mt-0.5 mb-3">ลองเปลี่ยนคำค้นหา หรือลงทะเบียนอะไหล่ใหม่เข้าระบบ</p>
+                          <Button size="sm" variant="outline" onClick={() => setIsCreateModalOpen(true)} className="gap-1.5">
+                            <Plus className="h-3.5 w-3.5" /> เพิ่มอะไหล่ใหม่
+                          </Button>
+                        </td>
+                      </tr>
                     ) : (
                       filtered.map((p, i) => {
                         const s = getStockStatus(p);
@@ -433,6 +988,14 @@ export default function SpareParts() {
 
       {modal && (
         <IssueReceiveModal part={modal.part} mode={modal.mode} onClose={() => setModal(null)} onConfirm={handleConfirm} />
+      )}
+
+      {isCreateModalOpen && (
+        <CreateSparePartModal
+          existingParts={parts}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSave={handleCreatePart}
+        />
       )}
     </div>
   );

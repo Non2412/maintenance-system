@@ -33,6 +33,7 @@ import {
   ClipboardList,
   ShieldAlert,
   ArrowRight,
+  History,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ import {
   MOCK_SPARE_PART_TRANSACTIONS,
   MOCK_CHECKSHEET_TEMPLATES,
   MOCK_CHECKSHEET_RECORDS,
+  MOCK_SPARE_PART_REQUESTS,
   SPARE_PART_CATEGORY_LABEL,
 } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
@@ -72,9 +74,9 @@ const STATUS_BAR_COLOR: Record<string, string> = {
 };
 
 // ─── Nav items ────────────────────────────────────────────────────────────────
-type NavKey = "overview" | "pipeline" | "team" | "spare" | "checksheet";
+type NavKey = "overview" | "pipeline" | "team" | "spare" | "checksheet" | "spare-requests" | "technician-history";
 
-const NAV_ITEMS: { key: NavKey; label: string; sublabel: string; icon: React.ReactNode }[] = [
+const NAV_ITEMS: { key: NavKey; label: string; sublabel: string; icon: React.ReactNode; href?: string }[] = [
   {
     key: "overview",
     label: "ภาพรวม",
@@ -104,6 +106,20 @@ const NAV_ITEMS: { key: NavKey; label: string; sublabel: string; icon: React.Rea
     label: "เช็คชีท",
     sublabel: "Compliance & บันทึก",
     icon: <ClipboardList className="h-5 w-5" />,
+  },
+  {
+    key: "spare-requests",
+    label: "ขออะไหล่",
+    sublabel: "คำขอจากช่าง",
+    icon: <ShieldAlert className="h-5 w-5" />,
+    href: "/admin/spare-requests",
+  },
+  {
+    key: "technician-history",
+    label: "ประวัติช่าง",
+    sublabel: "Timeline & รายงาน",
+    icon: <History className="h-5 w-5" />,
+    href: "/admin/technician-history",
   },
 ];
 
@@ -349,7 +365,7 @@ function PipelineSection({
   );
 }
 
-function TeamSection({ techPerf }: { techPerf: ReturnType<typeof useTechPerf> }) {
+function TeamSection({ techPerf, navigate }: { techPerf: ReturnType<typeof useTechPerf>; navigate: (p: string) => void }) {
   return (
     <div className="space-y-6">
       <Card className="p-5">
@@ -380,7 +396,7 @@ function TeamSection({ techPerf }: { techPerf: ReturnType<typeof useTechPerf> })
                 <div className="h-10 w-10 rounded-full bg-gradient-primary grid place-items-center text-primary-foreground font-bold text-sm shrink-0">
                   {tech.name.charAt(0)}
                 </div>
-                <div>
+                <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm">{tech.name}</p>
                   <p className="text-xs text-muted-foreground">{tech.id}</p>
                 </div>
@@ -408,9 +424,25 @@ function TeamSection({ techPerf }: { techPerf: ReturnType<typeof useTechPerf> })
                   <p className="text-amber-600">ค้างงาน</p>
                 </div>
               </div>
+              <button
+                className="w-full flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-medium text-primary hover:bg-primary/5 transition-colors"
+                onClick={() => navigate(`/admin/technician/${tech.id}`)}
+              >
+                ดูรายละเอียด <ChevronRight className="h-3.5 w-3.5" />
+              </button>
             </Card>
           );
         })}
+      </div>
+
+      <div className="flex flex-col sm:flex-row items-center justify-between p-4 rounded-xl border bg-card gap-3 shadow-sm">
+        <div>
+          <p className="text-sm font-semibold">ประวัติและ Timeline การทำงานของช่างทั้งหมด</p>
+          <p className="text-xs text-muted-foreground">ดูรายงานการปิดงาน, เวลาที่ใช้ และอะไหล่ที่เบิกระดับช่างรายบุคคล</p>
+        </div>
+        <Button onClick={() => navigate("/admin/technician-history")} className="gap-1.5 shrink-0" size="sm">
+          <History className="h-4 w-4" /> ดูประวัติการทำงาน <ArrowRight className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   );
@@ -525,9 +557,14 @@ function SpareSection({ navigate }: { navigate: (p: string) => void }) {
               })}
             </div>
           )}
-          <Button variant="outline" size="sm" className="w-full mt-4 gap-1" onClick={() => navigate('/spare-parts')}>
-            ไปยังระบบจัดการอะไหล่ <ArrowRight className="h-3.5 w-3.5" />
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2 mt-4">
+            <Button variant="outline" size="sm" className="flex-1 gap-1" onClick={() => navigate('/spare-parts')}>
+              ไปยังระบบจัดการอะไหล่ <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
+            <Button size="sm" className="flex-1 gap-1 bg-amber-500 hover:bg-amber-600 text-white" onClick={() => navigate('/admin/spare-requests')}>
+              <ShieldAlert className="h-3.5 w-3.5" /> ดูคำขออะไหล่จากช่าง
+            </Button>
+          </div>
         </Card>
       </section>
     </div>
@@ -735,10 +772,18 @@ export default function AdminDashboard() {
             </p>
             {NAV_ITEMS.map((item) => {
               const isActive = activeNav === item.key;
+              const pendingBadge = item.key === "spare-requests" ? MOCK_SPARE_PART_REQUESTS.filter(r => r.status === "pending").length : 0;
               return (
                 <button
                   key={item.key}
-                  onClick={() => { setActiveNav(item.key); setSidebarOpen(false); }}
+                  onClick={() => {
+                    if (item.href) {
+                      navigate(item.href);
+                    } else {
+                      setActiveNav(item.key);
+                    }
+                    setSidebarOpen(false);
+                  }}
                   className={cn(
                     "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150",
                     isActive
@@ -749,8 +794,15 @@ export default function AdminDashboard() {
                   <span className={cn("shrink-0", isActive ? "text-sidebar-primary-foreground" : "text-sidebar-foreground/60")}>
                     {item.icon}
                   </span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium">{item.label}</p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">{item.label}</p>
+                      {pendingBadge > 0 && (
+                        <span className="bg-amber-500 text-white rounded-full text-[10px] font-bold px-1.5 py-0.2">
+                          {pendingBadge}
+                        </span>
+                      )}
+                    </div>
                     <p className={cn("text-[11px] truncate", isActive ? "text-sidebar-primary-foreground/70" : "text-sidebar-foreground/50")}>
                       {item.sublabel}
                     </p>
@@ -810,7 +862,7 @@ export default function AdminDashboard() {
             {activeNav === "pipeline" && (
               <PipelineSection statusPipeline={statusPipeline} urgentJobs={urgentJobs} maxPipelineCount={maxPipelineCount} />
             )}
-            {activeNav === "team" && <TeamSection techPerf={techPerf} />}
+            {activeNav === "team" && <TeamSection techPerf={techPerf} navigate={navigate} />}
             {activeNav === "spare" && <SpareSection navigate={navigate} />}
             {activeNav === "checksheet" && <ChecksheetSection navigate={navigate} />}
           </div>

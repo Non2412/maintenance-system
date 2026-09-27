@@ -906,3 +906,421 @@ export function getTechnicianDepartment(technicianId: string | null | undefined)
   if (!technicianId) return "-";
   return TECHNICIAN_MAP[technicianId]?.department || "-";
 }
+
+// ─── Spare Part Request (ช่างขออะไหล่) ───────────────────────────────────────
+
+export type SparePartRequestStatus = "pending" | "approved" | "rejected" | "ordered" | "received";
+
+export interface SparePartRequest {
+  sr_id: string;
+  request_id: string;        // เชื่อมกับ WorkRequest
+  asset_name: string;
+  part_id: string;
+  part_name: string;
+  quantity: number;
+  unit: string;
+  unit_price: number;
+  requested_by: string;      // technician_id
+  requested_by_name: string;
+  requested_at: string;
+  status: SparePartRequestStatus;
+  urgency: "normal" | "urgent" | "critical";
+  reason: string;
+  approved_by?: string;
+  approved_at?: string;
+  po_number?: string;
+  reject_reason?: string;
+}
+
+export const MOCK_SPARE_PART_REQUESTS: SparePartRequest[] = [
+  {
+    sr_id: "SR-2026-001",
+    request_id: "REQ-20260421-022",
+    asset_name: "MCH-CNC-12",
+    part_id: "SP-ELC-220",
+    part_name: "คอนแทคเตอร์ 3P 40A",
+    quantity: 2,
+    unit: "ตัว",
+    unit_price: 890,
+    requested_by: "TECH001",
+    requested_by_name: "สมศักดิ์ ช่างไฟ",
+    requested_at: _d(10),
+    status: "pending",
+    urgency: "urgent",
+    reason: "คอนแทคเตอร์ไหม้ ต้องเปลี่ยนเพื่อให้เครื่องกลับมาทำงานได้",
+  },
+  {
+    sr_id: "SR-2026-002",
+    request_id: "REQ-20260422-001",
+    asset_name: "MCH-PR-2041",
+    part_id: "SP-HYD-022",
+    part_name: "ท่อไฮดรอลิก HP 3/8\" (1m)",
+    quantity: 3,
+    unit: "เมตร",
+    unit_price: 950,
+    requested_by: "TECH002",
+    requested_by_name: "วิษณุ ช่างกล",
+    requested_at: _d(8),
+    status: "approved",
+    urgency: "urgent",
+    reason: "ท่อรั่วซึม กระทบการผลิต Line 3",
+    approved_by: "ADMIN001",
+    approved_at: _d(6),
+    po_number: "PO-2026-0512",
+  },
+  {
+    sr_id: "SR-2026-003",
+    request_id: "REQ-20260421-014",
+    asset_name: "CNV-ASSY-08",
+    part_id: "SP-BLT-045",
+    part_name: "สายพาน V-Belt A-42",
+    quantity: 5,
+    unit: "เส้น",
+    unit_price: 780,
+    requested_by: "TECH002",
+    requested_by_name: "วิษณุ ช่างกล",
+    requested_at: _d(30),
+    status: "received",
+    urgency: "normal",
+    reason: "สายพานเก่าเริ่มหย่อน ควรเปลี่ยนก่อนขาด",
+    approved_by: "ADMIN001",
+    approved_at: _d(28),
+    po_number: "PO-2026-0489",
+  },
+  {
+    sr_id: "SR-2026-004",
+    request_id: "REQ-20260422-002",
+    asset_name: "ELC-DB-5510",
+    part_id: "SP-ELC-112",
+    part_name: "เบรกเกอร์ 3P 100A",
+    quantity: 2,
+    unit: "ตัว",
+    unit_price: 1250,
+    requested_by: "TECH001",
+    requested_by_name: "สมศักดิ์ ช่างไฟ",
+    requested_at: _d(2),
+    status: "pending",
+    urgency: "critical",
+    reason: "เบรกเกอร์ทริปบ่อย มีกลิ่นไหม้ ต้องเปลี่ยนทันที",
+  },
+  {
+    sr_id: "SR-2026-005",
+    request_id: "REQ-20260421-014",
+    asset_name: "CNV-ASSY-08",
+    part_id: "SP-SNS-099",
+    part_name: "เซ็นเซอร์ Proximity Inductive 12mm",
+    quantity: 1,
+    unit: "ตัว",
+    unit_price: 1650,
+    requested_by: "TECH001",
+    requested_by_name: "สมศักดิ์ ช่างไฟ",
+    requested_at: _d(5),
+    status: "ordered",
+    urgency: "normal",
+    reason: "เซ็นเซอร์ตรวจจับตำแหน่งเสีย ส่งผลให้สายพานหยุดทำงาน",
+    approved_by: "ADMIN001",
+    approved_at: _d(4),
+    po_number: "PO-2026-0510",
+  },
+];
+
+// ─── Purchase Order ────────────────────────────────────────────────────────────
+
+export type POStatus = "pending" | "approved" | "rejected" | "ordered";
+
+export interface PurchaseOrder {
+  po_id: string;
+  sr_ids: string[];
+  items: { part_name: string; quantity: number; unit: string; unit_price: number }[];
+  total_amount: number;
+  requested_by: string;
+  requested_by_name: string;
+  requested_at: string;
+  status: POStatus;
+  approved_by?: string;
+  approved_at?: string;
+  reject_reason?: string;
+  supplier?: string;
+  note?: string;
+}
+
+export const MOCK_PURCHASE_ORDERS: PurchaseOrder[] = [
+  {
+    po_id: "PO-2026-0515",
+    sr_ids: ["SR-2026-001", "SR-2026-004"],
+    items: [
+      { part_name: "คอนแทคเตอร์ 3P 40A", quantity: 2, unit: "ตัว", unit_price: 890 },
+      { part_name: "เบรกเกอร์ 3P 100A", quantity: 2, unit: "ตัว", unit_price: 1250 },
+    ],
+    total_amount: 4280,
+    requested_by: "ADMIN001",
+    requested_by_name: "ผู้จัดการฝ่ายซ่อมบำรุง",
+    requested_at: _d(1),
+    status: "pending",
+    supplier: "Schneider Electric TH",
+    note: "งานวิกฤติ ต้องการเร่งด่วน",
+  },
+  {
+    po_id: "PO-2026-0512",
+    sr_ids: ["SR-2026-002"],
+    items: [
+      { part_name: "ท่อไฮดรอลิก HP 3/8\" (1m)", quantity: 3, unit: "เมตร", unit_price: 950 },
+    ],
+    total_amount: 2850,
+    requested_by: "ADMIN001",
+    requested_by_name: "ผู้จัดการฝ่ายซ่อมบำรุง",
+    requested_at: _d(6),
+    status: "approved",
+    approved_by: "EXEC001",
+    approved_at: _d(5),
+    supplier: "Parker Hannifin TH",
+  },
+  {
+    po_id: "PO-2026-0489",
+    sr_ids: ["SR-2026-003"],
+    items: [
+      { part_name: "สายพาน V-Belt A-42", quantity: 5, unit: "เส้น", unit_price: 780 },
+    ],
+    total_amount: 3900,
+    requested_by: "ADMIN001",
+    requested_by_name: "ผู้จัดการฝ่ายซ่อมบำรุง",
+    requested_at: _d(29),
+    status: "ordered",
+    approved_by: "EXEC001",
+    approved_at: _d(28),
+    supplier: "Gates Corporation TH",
+  },
+];
+
+// ─── QC Schedule ──────────────────────────────────────────────────────────────
+
+export type QCScheduleStatus = "scheduled" | "in-progress" | "done" | "missed";
+
+export interface QCSchedule {
+  schedule_id: string;
+  title: string;
+  frequency: "daily" | "monthly";
+  machine_name: string;
+  machine_id: string;
+  zone: string;
+  assigned_to: string;
+  assigned_to_name: string;
+  scheduled_date: string;
+  scheduled_time_start: string;
+  scheduled_time_end: string;
+  checked_in_at?: string;
+  checked_out_at?: string;
+  status: QCScheduleStatus;
+  template_id?: string;
+  template_name?: string;
+  record_id?: string;
+  findings?: string;
+  work_request_id?: string;
+}
+
+export const QC_OFFICER_MAP: Record<string, { id: string; name: string }> = {
+  QC001: { id: "QC001", name: "ณัฐพงศ์ QC" },
+  QC002: { id: "QC002", name: "สุภาพร QC" },
+};
+
+const _today = new Date();
+const _dateStr = (daysOffset: number) => {
+  const d = new Date(_today);
+  d.setDate(d.getDate() + daysOffset);
+  return d.toISOString().split("T")[0];
+};
+
+export const MOCK_QC_SCHEDULES: QCSchedule[] = [
+  {
+    schedule_id: "QCS-2026-001",
+    title: "ตรวจ QC เครื่องจักรประจำวัน — Line A",
+    frequency: "daily",
+    machine_name: "MCH-PR-2041 (Hydraulic Press)",
+    machine_id: "MCH-PR-2041",
+    zone: "Line A — อาคารผลิต",
+    assigned_to: "QC001",
+    assigned_to_name: "ณัฐพงศ์ QC",
+    scheduled_date: _dateStr(0),
+    scheduled_time_start: "08:00",
+    scheduled_time_end: "09:00",
+    checked_in_at: new Date(_today.getFullYear(), _today.getMonth(), _today.getDate(), 8, 5).toISOString(),
+    checked_out_at: new Date(_today.getFullYear(), _today.getMonth(), _today.getDate(), 8, 52).toISOString(),
+    status: "done",
+    template_id: "CS-TPL-001",
+    template_name: "ตรวจสอบเครื่องจักรประจำวัน (เช้า)",
+    record_id: "REC-20260922-001",
+    findings: "พบน้ำมันรั่วเล็กน้อย แจ้งช่างแล้ว",
+    work_request_id: "REQ-20260422-001",
+  },
+  {
+    schedule_id: "QCS-2026-002",
+    title: "ตรวจ QC สายพานลำเลียง Assembly",
+    frequency: "daily",
+    machine_name: "CNV-ASSY-08",
+    machine_id: "CNV-ASSY-08",
+    zone: "Zone Assembly",
+    assigned_to: "QC002",
+    assigned_to_name: "สุภาพร QC",
+    scheduled_date: _dateStr(0),
+    scheduled_time_start: "10:00",
+    scheduled_time_end: "11:00",
+    status: "scheduled",
+    template_id: "CS-TPL-001",
+    template_name: "ตรวจสอบเครื่องจักรประจำวัน (เช้า)",
+  },
+  {
+    schedule_id: "QCS-2026-003",
+    title: "PM รายสัปดาห์ — Hydraulic System",
+    frequency: "daily",
+    machine_name: "MCH-HYD-005",
+    machine_id: "MCH-HYD-005",
+    zone: "Line B",
+    assigned_to: "QC001",
+    assigned_to_name: "ณัฐพงศ์ QC",
+    scheduled_date: _dateStr(1),
+    scheduled_time_start: "13:00",
+    scheduled_time_end: "15:00",
+    status: "scheduled",
+    template_id: "CS-TPL-002",
+    template_name: "PM รายสัปดาห์ — Hydraulic Press",
+  },
+  {
+    schedule_id: "QCS-2026-004",
+    title: "ตรวจ QC ตู้ไฟฟ้า",
+    frequency: "daily",
+    machine_name: "ELC-DB-5510",
+    machine_id: "ELC-DB-5510",
+    zone: "อาคาร B ชั้น 2",
+    assigned_to: "QC002",
+    assigned_to_name: "สุภาพร QC",
+    scheduled_date: _dateStr(-1),
+    scheduled_time_start: "14:00",
+    scheduled_time_end: "15:00",
+    status: "missed",
+    template_id: "CS-TPL-001",
+    template_name: "ตรวจสอบเครื่องจักรประจำวัน (เช้า)",
+  },
+  {
+    schedule_id: "QCS-2026-005",
+    title: "ตรวจสอบความปลอดภัยประจำเดือน",
+    frequency: "monthly",
+    machine_name: "ทุกพื้นที่",
+    machine_id: "ALL",
+    zone: "ทั้งโรงงาน",
+    assigned_to: "QC001",
+    assigned_to_name: "ณัฐพงศ์ QC",
+    scheduled_date: _dateStr(5),
+    scheduled_time_start: "09:00",
+    scheduled_time_end: "12:00",
+    status: "scheduled",
+    template_id: "CS-TPL-003",
+    template_name: "ตรวจสอบความปลอดภัยประจำเดือน",
+  },
+  {
+    schedule_id: "QCS-2026-006",
+    title: "ตรวจ QC เครื่อง CNC",
+    frequency: "daily",
+    machine_name: "MCH-CNC-12",
+    machine_id: "MCH-CNC-12",
+    zone: "CNC Area",
+    assigned_to: "QC002",
+    assigned_to_name: "สุภาพร QC",
+    scheduled_date: _dateStr(-2),
+    scheduled_time_start: "08:00",
+    scheduled_time_end: "09:00",
+    checked_in_at: new Date(_today.getFullYear(), _today.getMonth(), _today.getDate() - 2, 8, 10).toISOString(),
+    checked_out_at: new Date(_today.getFullYear(), _today.getMonth(), _today.getDate() - 2, 9, 0).toISOString(),
+    status: "done",
+    template_id: "CS-TPL-001",
+    template_name: "ตรวจสอบเครื่องจักรประจำวัน (เช้า)",
+    record_id: "REC-20260921-002",
+  },
+];
+
+// ─── User Approval Request ────────────────────────────────────────────────────
+
+export type UserRole = "technician" | "qc" | "admin" | "executive" | "requester";
+export type ApprovalStatus = "pending" | "approved" | "rejected";
+
+export interface UserApprovalRequest {
+  approval_id: string;
+  name: string;
+  emp_id: string;
+  department: string;
+  position: string;
+  role_requested: UserRole;
+  requested_at: string;
+  status: ApprovalStatus;
+  approved_by?: string;
+  approved_at?: string;
+  reject_reason?: string;
+  note?: string;
+}
+
+export const ROLE_LABEL: Record<UserRole, string> = {
+  technician: "ช่างซ่อมบำรุง",
+  qc: "เจ้าหน้าที่ QC",
+  admin: "ผู้ดูแลระบบ",
+  executive: "ผู้บริหาร",
+  requester: "ผู้แจ้งซ่อม",
+};
+
+export const MOCK_USER_APPROVAL_REQUESTS: UserApprovalRequest[] = [
+  {
+    approval_id: "APV-2026-001",
+    name: "ชาญณรงค์ มั่นคง",
+    emp_id: "EMP-1045",
+    department: "ฝ่ายซ่อมบำรุง",
+    position: "ช่างไฟฟ้า",
+    role_requested: "technician",
+    requested_at: _d(2),
+    status: "pending",
+    note: "โอนย้ายมาจากสาขาอยุธยา",
+  },
+  {
+    approval_id: "APV-2026-002",
+    name: "พิมพ์ชนก เจริญสุข",
+    emp_id: "EMP-1052",
+    department: "ฝ่ายควบคุมคุณภาพ",
+    position: "วิศวกร QC",
+    role_requested: "qc",
+    requested_at: _d(5),
+    status: "approved",
+    approved_by: "ผู้บริหาร",
+    approved_at: _d(4),
+  },
+  {
+    approval_id: "APV-2026-003",
+    name: "ธนกฤต วิทยากร",
+    emp_id: "EMP-0892",
+    department: "ฝ่ายซ่อมบำรุง",
+    position: "หัวหน้าช่าง",
+    role_requested: "admin",
+    requested_at: _d(7),
+    status: "pending",
+    note: "ขอสิทธิ์ Admin เพิ่มเพื่อจัดการตาราง PM",
+  },
+  {
+    approval_id: "APV-2026-004",
+    name: "วรรณิศา ทองดี",
+    emp_id: "EMP-1100",
+    department: "ฝ่ายผลิต",
+    position: "พนักงานผลิต",
+    role_requested: "requester",
+    requested_at: _d(1),
+    status: "approved",
+    approved_by: "ผู้บริหาร",
+    approved_at: _d(0.5),
+  },
+  {
+    approval_id: "APV-2026-005",
+    name: "อภิวัฒน์ สมหวัง",
+    emp_id: "EMP-0750",
+    department: "ฝ่ายซ่อมบำรุง",
+    position: "ช่างกล",
+    role_requested: "technician",
+    requested_at: _d(14),
+    status: "rejected",
+    reject_reason: "ยังไม่ผ่านการอบรมภายใน",
+  },
+];

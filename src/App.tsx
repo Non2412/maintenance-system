@@ -12,6 +12,17 @@ import NotFound from "./pages/NotFound.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import SpareParts from "./pages/SpareParts.tsx";
 import Checksheet from "./pages/Checksheet.tsx";
+// ── Admin ──
+import AdminSpareRequests from "./pages/AdminSpareRequests.tsx";
+import TechnicianDetail from "./pages/TechnicianDetail.tsx";
+import TechnicianHistory from "./pages/TechnicianHistory.tsx";
+// ── QC ──
+import QCDashboard from "./pages/QCDashboard.tsx";
+import QCRecordDetail from "./pages/QCRecordDetail.tsx";
+// ── Executive ──
+import ExecutiveDashboard from "./pages/ExecutiveDashboard.tsx";
+import ExecutivePurchaseApproval from "./pages/ExecutivePurchaseApproval.tsx";
+import ExecutiveUserApproval from "./pages/ExecutiveUserApproval.tsx";
 
 const queryClient = new QueryClient();
 
@@ -28,8 +39,19 @@ const App = () => (
           <Route path="/notifications" element={<NotificationCenter />} />
           <Route path="/assessment/:id" element={<AssessmentForm />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/spare-requests" element={<AdminSpareRequests />} />
+          <Route path="/admin/technician-history" element={<TechnicianHistory />} />
+          <Route path="/admin/technician/:id" element={<TechnicianDetail />} />
           <Route path="/spare-parts" element={<SpareParts />} />
           <Route path="/checksheet" element={<Checksheet />} />
+          {/* QC */}
+          <Route path="/qc/dashboard" element={<QCDashboard />} />
+          <Route path="/qc/schedule" element={<QCDashboard />} />
+          <Route path="/qc/record/:id" element={<QCRecordDetail />} />
+          {/* Executive */}
+          <Route path="/executive/dashboard" element={<ExecutiveDashboard />} />
+          <Route path="/executive/purchase-approval" element={<ExecutivePurchaseApproval />} />
+          <Route path="/executive/user-approval" element={<ExecutiveUserApproval />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
