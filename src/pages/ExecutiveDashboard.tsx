@@ -23,6 +23,7 @@ import {
   WorkRequest,
 } from "@/lib/mockData";
 import { useRequests } from "@/lib/requestStore";
+import ExecutiveLayout from "@/components/ExecutiveLayout";
 
 // ─── Mock monthly trend data ──────────────────────────────────────────────────
 
@@ -122,36 +123,31 @@ export default function ExecutiveDashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-30 bg-gradient-primary text-primary-foreground shadow-md">
-        <div className="px-4 py-3 flex items-center gap-3">
-          <div className="h-9 w-9 rounded-md bg-secondary grid place-items-center shrink-0">
-            <TrendingUp className="h-5 w-5 text-secondary-foreground" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-xs uppercase tracking-wider text-primary-foreground/70">Executive Dashboard</div>
-            <h1 className="font-bold truncate">สรุปภาพรวมสำหรับผู้บริหาร</h1>
-          </div>
-          <div className="hidden xl:flex items-center gap-2">
-            {kpi.pendingPO > 0 && (
-              <span className="rounded-full bg-amber-500/20 border border-amber-400/40 px-3 py-1 text-xs font-semibold">
-                PO รออนุมัติ {kpi.pendingPO}
-              </span>
-            )}
-            {kpi.pendingApproval > 0 && (
-              <span className="rounded-full bg-blue-500/20 border border-blue-400/40 px-3 py-1 text-xs font-semibold">
-                สิทธิ์รออนุมัติ {kpi.pendingApproval}
-              </span>
-            )}
-          </div>
-          <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10" onClick={() => navigate("/")}>
-            <LogOut className="h-5 w-5" />
+    <ExecutiveLayout
+      title="สรุปภาพรวมสำหรับผู้บริหาร"
+      subtitle="Executive KPIs, Budget Allocation & Machine Reliability"
+      actions={
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            className="gap-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs"
+            onClick={() => navigate("/executive/purchase-approval")}
+          >
+            <Package className="h-3.5 w-3.5" /> PO รออนุมัติ
+            {kpi.pendingPO > 0 && <span className="bg-white/20 rounded-full px-1.5 py-0.2 text-[10px] font-bold">{kpi.pendingPO}</span>}
+          </Button>
+          <Button
+            size="sm"
+            className="gap-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs"
+            onClick={() => navigate("/executive/user-approval")}
+          >
+            <Users className="h-3.5 w-3.5" /> สิทธิ์รออนุมัติ
+            {kpi.pendingApproval > 0 && <span className="bg-white/20 rounded-full px-1.5 py-0.2 text-[10px] font-bold">{kpi.pendingApproval}</span>}
           </Button>
         </div>
-      </header>
-
-      <main className="flex-1 p-4 sm:p-6 space-y-8 max-w-7xl mx-auto w-full">
+      }
+    >
+      <div className="space-y-8">
 
         {/* Quick Action */}
         <div className="flex flex-wrap gap-3">
@@ -333,7 +329,7 @@ export default function ExecutiveDashboard() {
             <LayoutDashboard className="h-4 w-4" />Admin Dashboard
           </Button>
         </div>
-      </main>
-    </div>
+      </div>
+    </ExecutiveLayout>
   );
 }

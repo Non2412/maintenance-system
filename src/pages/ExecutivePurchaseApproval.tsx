@@ -15,6 +15,7 @@ import {
   timeAgo,
 } from "@/lib/mockData";
 import { toast } from "sonner";
+import ExecutiveLayout from "@/components/ExecutiveLayout";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -207,31 +208,18 @@ export default function ExecutivePurchaseApproval() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="sticky top-0 z-30 bg-gradient-primary text-primary-foreground shadow-md">
-        <div className="px-4 py-3 flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10" onClick={() => navigate("/executive/dashboard")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="h-9 w-9 rounded-md bg-secondary grid place-items-center shrink-0">
-            <ShoppingCart className="h-5 w-5 text-secondary-foreground" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-xs uppercase tracking-wider text-primary-foreground/70">Executive</div>
-            <h1 className="font-bold truncate">อนุมัติการสั่งซื้ออะไหล่</h1>
-          </div>
-          {kpi.pending > 0 && (
-            <span className="hidden sm:flex items-center gap-1.5 rounded-full bg-amber-500/20 border border-amber-400/40 px-3 py-1 text-xs font-semibold">
-              <Clock className="h-3 w-3" />รออนุมัติ {kpi.pending} รายการ
-            </span>
-          )}
-          <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10" onClick={() => navigate("/")}>
-            <LogOut className="h-5 w-5" />
-          </Button>
-        </div>
-      </header>
-
-      <main className="flex-1 p-4 sm:p-6 space-y-6 max-w-5xl mx-auto w-full">
+    <ExecutiveLayout
+      title="อนุมัติการสั่งซื้ออะไหล่ (Purchase Orders)"
+      subtitle="พิจารณาและอนุมัติใบสั่งซื้ออะไหล่จากฝ่ายซ่อมบำรุงตามงบประมาณโรงงาน"
+      actions={
+        kpi.pending > 0 ? (
+          <span className="flex items-center gap-1.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 px-3 py-1 text-xs font-bold">
+            <Clock className="h-3.5 w-3.5" /> รออนุมัติ {kpi.pending} รายการ
+          </span>
+        ) : undefined
+      }
+    >
+      <div className="space-y-6">
         {/* KPI */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
@@ -331,7 +319,7 @@ export default function ExecutivePurchaseApproval() {
               })
           )}
         </div>
-      </main>
+      </div>
 
       {selected && (
         <PODetailDrawer
@@ -348,6 +336,6 @@ export default function ExecutivePurchaseApproval() {
           onConfirm={(reason) => handleReject(rejectTarget, reason)}
         />
       )}
-    </div>
+    </ExecutiveLayout>
   );
 }

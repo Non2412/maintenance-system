@@ -1113,6 +1113,8 @@ export interface QCSchedule {
   status: QCScheduleStatus;
   template_id?: string;
   template_name?: string;
+  matrix_template_id?: string;
+  matrix_progress?: { logged_slots: number; total_slots: number };
   record_id?: string;
   findings?: string;
   work_request_id?: string;
@@ -1133,40 +1135,43 @@ const _dateStr = (daysOffset: number) => {
 export const MOCK_QC_SCHEDULES: QCSchedule[] = [
   {
     schedule_id: "QCS-2026-001",
-    title: "ตรวจ QC เครื่องจักรประจำวัน — Line A",
+    title: "ตรวจเครื่องคัดแยกและระบบสั่น 24 ชม.",
     frequency: "daily",
-    machine_name: "MCH-PR-2041 (Hydraulic Press)",
-    machine_id: "MCH-PR-2041",
-    zone: "Line A — อาคารผลิต",
+    machine_name: "SORT-VIB-01 (เครื่องคัดแยกและถาดสั่น)",
+    machine_id: "SORT-VIB-01",
+    zone: "Line คัดแยกข้าวสาร",
     assigned_to: "QC001",
     assigned_to_name: "ณัฐพงศ์ QC",
     scheduled_date: _dateStr(0),
     scheduled_time_start: "08:00",
-    scheduled_time_end: "09:00",
-    checked_in_at: new Date(_today.getFullYear(), _today.getMonth(), _today.getDate(), 8, 5).toISOString(),
-    checked_out_at: new Date(_today.getFullYear(), _today.getMonth(), _today.getDate(), 8, 52).toISOString(),
-    status: "done",
+    scheduled_time_end: "08:00",
+    checked_in_at: new Date(_today.getFullYear(), _today.getMonth(), _today.getDate(), 8, 0).toISOString(),
+    status: "in-progress",
     template_id: "CS-TPL-001",
-    template_name: "ตรวจสอบเครื่องจักรประจำวัน (เช้า)",
+    matrix_template_id: "TPL-HOURLY-002",
+    template_name: "รายการตรวจสอบเครื่องคัดแยกและระบบสั่น 24 ชั่วโมง",
+    matrix_progress: { logged_slots: 7, total_slots: 24 },
     record_id: "REC-20260922-001",
-    findings: "พบน้ำมันรั่วเล็กน้อย แจ้งช่างแล้ว",
+    findings: "หลอดไฟช่องคัดแยกดับ 1 หลอด ดำเนินการแจ้งซ่อมแล้ว",
     work_request_id: "REQ-20260422-001",
   },
   {
     schedule_id: "QCS-2026-002",
-    title: "ตรวจ QC สายพานลำเลียง Assembly",
+    title: "ROLLERMILL PARAMETERS — Line C",
     frequency: "daily",
-    machine_name: "CNV-ASSY-08",
-    machine_id: "CNV-ASSY-08",
-    zone: "Zone Assembly",
+    machine_name: "ROLLERMILL Line C (B1-C10)",
+    machine_id: "ROLLER-LINE-C",
+    zone: "อาคารโม่แป้ง Line C",
     assigned_to: "QC002",
     assigned_to_name: "สุภาพร QC",
     scheduled_date: _dateStr(0),
-    scheduled_time_start: "10:00",
-    scheduled_time_end: "11:00",
-    status: "scheduled",
-    template_id: "CS-TPL-001",
-    template_name: "ตรวจสอบเครื่องจักรประจำวัน (เช้า)",
+    scheduled_time_start: "08:00",
+    scheduled_time_end: "16:00",
+    checked_in_at: new Date(_today.getFullYear(), _today.getMonth(), _today.getDate(), 8, 15).toISOString(),
+    status: "in-progress",
+    matrix_template_id: "TPL-ROLLERMILL-001",
+    template_name: "ROLLERMILL PARAMETERS (Line C)",
+    matrix_progress: { logged_slots: 1, total_slots: 3 },
   },
   {
     schedule_id: "QCS-2026-003",
@@ -1324,3 +1329,372 @@ export const MOCK_USER_APPROVAL_REQUESTS: UserApprovalRequest[] = [
     reject_reason: "ยังไม่ผ่านการอบรมภายใน",
   },
 ];
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ─── QC Matrix System (Industrial Checksheets & Hourly Inspection) ───────────
+// ══════════════════════════════════════════════════════════════════════════════
+
+export type QCTemplateType = "standard" | "hourly_matrix" | "shift_parameter_matrix";
+export type QCCellStatus = "normal" | "abnormal" | "repair_needed" | "inactive" | "na";
+
+export interface QCMatrixColumn {
+  col_id: string;
+  label: string;
+  sub_label?: string;
+  group?: string;
+  disabled_for_items?: string[]; // IDs of rows disabled for this column (e.g. hatched cells)
+}
+
+export interface QCMatrixRow {
+  row_id: string;
+  order: number;
+  title: string;
+  input_type: "status_symbol" | "number" | "text";
+  unit?: string;
+  min_value?: number;
+  max_value?: number;
+  standard_value?: string;
+  applicable_columns?: string[];
+  note?: string;
+}
+
+export interface QCMatrixShift {
+  shift_id: string;
+  name: string;
+  time_range: string;
+}
+
+export interface QCMatrixSignoffRole {
+  role_id: string;
+  title: string;
+}
+
+export interface QCMatrixTemplate {
+  template_id: string;
+  template_type: QCTemplateType;
+  title: string;
+  company_name?: string;
+  document_no?: string;
+  line_or_zone?: string;
+  machine_type?: string;
+  page_info?: string;
+  notes_guidelines?: string[];
+  columns: QCMatrixColumn[];
+  rows: QCMatrixRow[];
+  shifts?: QCMatrixShift[];
+  signoff_roles?: QCMatrixSignoffRole[];
+  created_by: string;
+  created_at: string;
+  active: boolean;
+}
+
+export interface QCMatrixCellValue {
+  status?: QCCellStatus;
+  numeric_value?: number;
+  text_value?: string;
+  logged_at?: string;
+  logged_by?: string;
+  note?: string;
+  work_request_id?: string;
+}
+
+export interface QCMatrixRecordData {
+  record_id: string;
+  schedule_id: string;
+  template_id: string;
+  date: string;
+  cells: Record<string, QCMatrixCellValue>; // key: `${shift_id || 'default'}_${row_id}_${col_id}`
+  column_signoffs?: Record<string, { inspector_name?: string; inspector_time?: string; verifier_name?: string; verifier_time?: string }>; // key: `${shift_id || 'default'}_${col_id}`
+  shift_signoffs?: Record<string, { inspector_name?: string; inspector_time?: string; verifier_name?: string; verifier_time?: string }>; // key: shift_id
+  supervisor_approval?: {
+    approved_by?: string;
+    approved_at?: string;
+    status: "pending" | "approved";
+    comment?: string;
+  };
+}
+
+// ─── Matrix Presets ──────────────────────────────────────────────────────────
+
+export const MOCK_QC_MATRIX_TEMPLATES: QCMatrixTemplate[] = [
+  {
+    template_id: "TPL-HOURLY-002",
+    template_type: "hourly_matrix",
+    title: "รายการตรวจสอบเครื่องคัดแยกและระบบสั่น 24 ชั่วโมง",
+    company_name: "บริษัท เพรซิเดนท์ฟลาวมิลล์ จำกัด",
+    document_no: "QC-SRT-24H",
+    line_or_zone: "Line คัดแยกข้าวสาร / ระบบสั่น",
+    machine_type: "เครื่องคัดแยกและถาดสั่น",
+    page_info: "หน้า 1/1",
+    created_by: "สุภาพร QC",
+    created_at: new Date(Date.now() - 30 * 86400000).toISOString(),
+    active: true,
+    signoff_roles: [
+      { role_id: "millhand", title: "ผู้ตรวจสอบ: Millhand" },
+      { role_id: "miller", title: "ผู้ทวนสอบ: Miller" },
+    ],
+    notes_guidelines: [
+      "1. ให้ตรวจสอบเครื่องจักรทุก 2 ชั่วโมง",
+      "2. รายการที่ 7, 8, 9, 10 ให้ใส่ค่าที่อ่านได้ ถ้าไม่อยู่ในค่าที่กำหนดให้แจ้งหัวหน้างาน",
+      "3. ผู้ตรวจสอบคือพนักงาน MILLHAND ขึ้นไป",
+      "4. พบปัญหาการทำงานของเครื่องจักรแจ้งหัวหน้างานทันที",
+    ],
+    columns: [
+      { col_id: "08_00", label: "8.00", disabled_for_items: ["color_defect", "spot_defect"] },
+      { col_id: "09_00", label: "9.00" },
+      { col_id: "10_00", label: "10.00", disabled_for_items: ["color_defect", "spot_defect"] },
+      { col_id: "11_00", label: "11.00" },
+      { col_id: "12_00", label: "12.00", disabled_for_items: ["color_defect", "spot_defect"] },
+      { col_id: "13_00", label: "13.00" },
+      { col_id: "14_00", label: "14.00", disabled_for_items: ["color_defect", "spot_defect"] },
+      { col_id: "15_00", label: "15.00" },
+      { col_id: "16_00", label: "16.00", disabled_for_items: ["color_defect", "spot_defect"] },
+      { col_id: "17_00", label: "17.00" },
+      { col_id: "18_00", label: "18.00", disabled_for_items: ["color_defect", "spot_defect"] },
+      { col_id: "19_00", label: "19.00" },
+      { col_id: "20_00", label: "20.00", disabled_for_items: ["color_defect", "spot_defect"] },
+      { col_id: "21_00", label: "21.00" },
+      { col_id: "22_00", label: "22.00", disabled_for_items: ["color_defect", "spot_defect"] },
+      { col_id: "23_00", label: "23.00" },
+      { col_id: "24_00", label: "24.00", disabled_for_items: ["color_defect", "spot_defect"] },
+      { col_id: "01_00", label: "1.00" },
+      { col_id: "02_00", label: "2.00", disabled_for_items: ["color_defect", "spot_defect"] },
+      { col_id: "03_00", label: "3.00" },
+      { col_id: "04_00", label: "4.00", disabled_for_items: ["color_defect", "spot_defect"] },
+      { col_id: "05_00", label: "5.00" },
+      { col_id: "06_00", label: "6.00", disabled_for_items: ["color_defect", "spot_defect"] },
+      { col_id: "07_00", label: "7.00" },
+    ],
+    rows: [
+      { row_id: "ch_sorter", order: 1, title: "1.) ช่องคัดข้าวไม่ได้คุณภาพมีข้าวติดปนหรือไม่", input_type: "status_symbol" },
+      { row_id: "vib_1", order: 2, title: "2.) ระบบสั่นถาดที่ 1 ทำงานหรือไม่", input_type: "status_symbol" },
+      { row_id: "vib_2", order: 3, title: "3.) ระบบสั่นถาดที่ 2 ทำงานหรือไม่", input_type: "status_symbol" },
+      { row_id: "vib_3", order: 4, title: "4.) ระบบสั่นถาดที่ 3 ทำงานหรือไม่", input_type: "status_symbol" },
+      { row_id: "vib_4", order: 5, title: "5.) ระบบสั่นถาดที่ 4 ทำงานหรือไม่", input_type: "status_symbol" },
+      { row_id: "lamps", order: 6, title: "6.) หลอดไฟทำงานทุกหลอดหรือไม่", input_type: "status_symbol" },
+      { row_id: "ejector_rates", order: 7, title: "7.) EJECTOR RATES", input_type: "number", unit: "%", min_value: 5, max_value: 20 },
+      { row_id: "color_defect", order: 8, title: "8.) COLOUR DEFECT", input_type: "number", unit: "%", min_value: 0, max_value: 0.5, note: "ตรวจเฉพาะชั่วโมงคี่" },
+      { row_id: "spot_defect", order: 9, title: "9.) SPOT DEFECT", input_type: "number", unit: "%", min_value: 0, max_value: 0.3, note: "ตรวจเฉพาะชั่วโมงคี่" },
+      { row_id: "pressure_gauge", order: 10, title: "10.) ค่าแรงดันลมที่ PRESSURE GAUGE", input_type: "number", unit: "bar", min_value: 5.5, max_value: 7.0 },
+      { row_id: "machine_oper", order: 11, title: "11.) การทำงานของเครื่องจักร", input_type: "status_symbol" },
+    ],
+  },
+  {
+    template_id: "TPL-ROLLERMILL-001",
+    template_type: "shift_parameter_matrix",
+    title: "ROLLERMILL PARAMETERS",
+    company_name: "บริษัท เพรซิเดนท์ฟลาวมิลล์ จำกัด",
+    document_no: "QC-RML-LineC",
+    line_or_zone: "ROLLERMILL Line C",
+    machine_type: "เครื่องโม่แป้ง Rollermill",
+    page_info: "หน้า 1",
+    created_by: "ณัฐพงศ์ QC",
+    created_at: new Date(Date.now() - 45 * 86400000).toISOString(),
+    active: true,
+    shifts: [
+      { shift_id: "shift_a", name: "SHIFT A", time_range: "08:00 - 16:00" },
+      { shift_id: "shift_b", name: "SHIFT B", time_range: "16:00 - 24:00" },
+      { shift_id: "shift_c", name: "SHIFT C", time_range: "00:00 - 08:00" },
+    ],
+    notes_guidelines: [
+      "1. ทวนสอบทุกครั้งที่เปลี่ยนกะ",
+      "2. ช่อง BREAK RELEASE เช็คเฉพาะ B1, B2 และ B3 เท่านั้น",
+      "3. ช่อง Roller ใส่เครื่องหมายแทนค่า ดังนี้: [✓] ปกติ  [✗] ขาด/หัวฉีกขาด",
+      "4. แจ้งหัวหน้างานทันทีเมื่อพบสิ่งผิดปกติ",
+    ],
+    columns: [
+      { col_id: "B1B2", label: "B1B2", group: "ROLLERMILL Line C" },
+      { col_id: "B3", label: "B3", group: "ROLLERMILL Line C" },
+      { col_id: "B4", label: "B4", group: "ROLLERMILL Line C" },
+      { col_id: "B5", label: "B5", group: "ROLLERMILL Line C" },
+      { col_id: "C1AC1A_I", label: "C1AC1A I", group: "ROLLERMILL Line C" },
+      { col_id: "C1AC1A_II", label: "C1AC1A II", group: "ROLLERMILL Line C" },
+      { col_id: "C1BC2B", label: "C1BC2B", group: "ROLLERMILL Line C" },
+      { col_id: "C3", label: "C3", group: "ROLLERMILL Line C" },
+      { col_id: "C4", label: "C4", group: "ROLLERMILL Line C" },
+      { col_id: "C5", label: "C5", group: "ROLLERMILL Line C" },
+      { col_id: "C6", label: "C6", group: "ROLLERMILL Line C" },
+      { col_id: "C7", label: "C7", group: "ROLLERMILL Line C" },
+      { col_id: "C8", label: "C8", group: "ROLLERMILL Line C" },
+      { col_id: "C10", label: "C10", group: "ROLLERMILL Line C" },
+      { col_id: "inspector", label: "ผู้ตรวจ", sub_label: "ลายมือชื่อ" },
+    ],
+    rows: [
+      { row_id: "motor_a", order: 1, title: "MOTOR (A)", input_type: "number", unit: "A", min_value: 15, max_value: 38 },
+      { row_id: "2f1g_max", order: 2, title: "2F1G MAX", input_type: "number", min_value: 20, max_value: 45 },
+      { row_id: "2f1g_min", order: 3, title: "2F1G MIN", input_type: "number", min_value: 10, max_value: 25 },
+      { row_id: "level", order: 4, title: "LEVEL", input_type: "text", standard_value: "ปกติ" },
+      { row_id: "level_min", order: 5, title: "LEVEL MIN", input_type: "text", standard_value: "ปกติ" },
+      { row_id: "clock_l", order: 6, title: "CLOCK (L)", input_type: "number", unit: "mm" },
+      { row_id: "clock_r", order: 7, title: "CLOCK (R)", input_type: "number", unit: "mm" },
+      { row_id: "break_release", order: 8, title: "BREAK RELEASE", input_type: "status_symbol", applicable_columns: ["B1B2", "B3", "B4", "B5"], note: "เช็คเฉพาะ B1, B2 และ B3 เท่านั้น" },
+      { row_id: "roller", order: 9, title: "ROLLER", input_type: "status_symbol", note: "ใส่ [✓] ปกติ, [✗] ขาด/หัวฉีกขาด" },
+    ],
+  },
+];
+
+// ─── Initial Mock Matrix Records ─────────────────────────────────────────────
+
+export const MOCK_QC_MATRIX_RECORDS: Record<string, QCMatrixRecordData> = {
+  "QCS-2026-001": {
+    record_id: "MAT-REC-2026-001",
+    schedule_id: "QCS-2026-001",
+    template_id: "TPL-HOURLY-002",
+    date: new Date().toISOString().split("T")[0],
+    cells: {
+      // 08:00 slot
+      "default_ch_sorter_08_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "08:05" },
+      "default_vib_1_08_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "08:05" },
+      "default_vib_2_08_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "08:05" },
+      "default_vib_3_08_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "08:05" },
+      "default_vib_4_08_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "08:05" },
+      "default_lamps_08_00": { status: "repair_needed", logged_by: "วิชัย (Millhand)", logged_at: "08:06", note: "หลอดไฟช่องคัดดับ 1 ดวง", work_request_id: "REQ-20260422-001" },
+      "default_ejector_rates_08_00": { numeric_value: 12.4, logged_by: "วิชัย (Millhand)", logged_at: "08:07" },
+      "default_pressure_gauge_08_00": { numeric_value: 6.2, logged_by: "วิชัย (Millhand)", logged_at: "08:08" },
+      "default_machine_oper_08_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "08:08" },
+
+      // 09:00 slot
+      "default_ch_sorter_09_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "09:02" },
+      "default_vib_1_09_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "09:02" },
+      "default_vib_2_09_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "09:02" },
+      "default_vib_3_09_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "09:02" },
+      "default_vib_4_09_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "09:02" },
+      "default_lamps_09_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "09:03" },
+      "default_ejector_rates_09_00": { numeric_value: 12.5, logged_by: "วิชัย (Millhand)", logged_at: "09:04" },
+      "default_color_defect_09_00": { numeric_value: 0.15, logged_by: "วิชัย (Millhand)", logged_at: "09:04" },
+      "default_spot_defect_09_00": { numeric_value: 0.08, logged_by: "วิชัย (Millhand)", logged_at: "09:05" },
+      "default_pressure_gauge_09_00": { numeric_value: 6.3, logged_by: "วิชัย (Millhand)", logged_at: "09:05" },
+      "default_machine_oper_09_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "09:06" },
+
+      // 10:00 slot
+      "default_ch_sorter_10_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "10:05" },
+      "default_vib_1_10_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "10:05" },
+      "default_vib_2_10_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "10:05" },
+      "default_vib_3_10_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "10:05" },
+      "default_vib_4_10_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "10:05" },
+      "default_lamps_10_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "10:05" },
+      "default_ejector_rates_10_00": { numeric_value: 12.3, logged_by: "วิชัย (Millhand)", logged_at: "10:06" },
+      "default_pressure_gauge_10_00": { numeric_value: 6.2, logged_by: "วิชัย (Millhand)", logged_at: "10:06" },
+      "default_machine_oper_10_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "10:07" },
+
+      // 11:00 slot
+      "default_ch_sorter_11_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "11:01" },
+      "default_vib_1_11_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "11:01" },
+      "default_vib_2_11_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "11:01" },
+      "default_vib_3_11_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "11:01" },
+      "default_vib_4_11_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "11:01" },
+      "default_lamps_11_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "11:02" },
+      "default_ejector_rates_11_00": { numeric_value: 12.4, logged_by: "วิชัย (Millhand)", logged_at: "11:03" },
+      "default_color_defect_11_00": { numeric_value: 0.12, logged_by: "วิชัย (Millhand)", logged_at: "11:03" },
+      "default_spot_defect_11_00": { numeric_value: 0.05, logged_by: "วิชัย (Millhand)", logged_at: "11:04" },
+      "default_pressure_gauge_11_00": { numeric_value: 6.2, logged_by: "วิชัย (Millhand)", logged_at: "11:04" },
+      "default_machine_oper_11_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "11:05" },
+
+      // 12:00 slot
+      "default_ch_sorter_12_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "12:00" },
+      "default_vib_1_12_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "12:00" },
+      "default_vib_2_12_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "12:00" },
+      "default_vib_3_12_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "12:00" },
+      "default_vib_4_12_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "12:00" },
+      "default_lamps_12_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "12:01" },
+      "default_ejector_rates_12_00": { numeric_value: 12.5, logged_by: "วิชัย (Millhand)", logged_at: "12:01" },
+      "default_pressure_gauge_12_00": { numeric_value: 6.1, logged_by: "วิชัย (Millhand)", logged_at: "12:02" },
+      "default_machine_oper_12_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "12:02" },
+
+      // 13:00 slot
+      "default_ch_sorter_13_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "13:00" },
+      "default_vib_1_13_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "13:00" },
+      "default_vib_2_13_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "13:00" },
+      "default_vib_3_13_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "13:00" },
+      "default_vib_4_13_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "13:00" },
+      "default_lamps_13_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "13:01" },
+      "default_ejector_rates_13_00": { numeric_value: 12.4, logged_by: "วิชัย (Millhand)", logged_at: "13:02" },
+      "default_color_defect_13_00": { numeric_value: 0.18, logged_by: "วิชัย (Millhand)", logged_at: "13:02" },
+      "default_spot_defect_13_00": { numeric_value: 0.09, logged_by: "วิชัย (Millhand)", logged_at: "13:03" },
+      "default_pressure_gauge_13_00": { numeric_value: 6.2, logged_by: "วิชัย (Millhand)", logged_at: "13:03" },
+      "default_machine_oper_13_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "13:04" },
+
+      // 14:00 slot
+      "default_ch_sorter_14_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "14:05" },
+      "default_vib_1_14_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "14:05" },
+      "default_vib_2_14_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "14:05" },
+      "default_vib_3_14_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "14:05" },
+      "default_vib_4_14_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "14:05" },
+      "default_lamps_14_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "14:06" },
+      "default_ejector_rates_14_00": { numeric_value: 12.3, logged_by: "วิชัย (Millhand)", logged_at: "14:06" },
+      "default_pressure_gauge_14_00": { numeric_value: 6.3, logged_by: "วิชัย (Millhand)", logged_at: "14:07" },
+      "default_machine_oper_14_00": { status: "normal", logged_by: "วิชัย (Millhand)", logged_at: "14:07" },
+    },
+    column_signoffs: {
+      "default_08_00": { inspector_name: "วิชัย ป.", inspector_time: "08:10", verifier_name: "ธีรเดช ส.", verifier_time: "08:15" },
+      "default_09_00": { inspector_name: "วิชัย ป.", inspector_time: "09:07", verifier_name: "ธีรเดช ส.", verifier_time: "09:12" },
+      "default_10_00": { inspector_name: "วิชัย ป.", inspector_time: "10:08", verifier_name: "ธีรเดช ส.", verifier_time: "10:15" },
+      "default_11_00": { inspector_name: "วิชัย ป.", inspector_time: "11:06", verifier_name: "ธีรเดช ส.", verifier_time: "11:10" },
+      "default_12_00": { inspector_name: "วิชัย ป.", inspector_time: "12:05", verifier_name: "ธีรเดช ส.", verifier_time: "12:15" },
+      "default_13_00": { inspector_name: "วิชัย ป.", inspector_time: "13:05", verifier_name: "ธีรเดช ส.", verifier_time: "13:10" },
+      "default_14_00": { inspector_name: "วิชัย ป.", inspector_time: "14:08", verifier_name: "ธีรเดช ส.", verifier_time: "14:15" },
+    },
+    supervisor_approval: {
+      approved_by: "สมบัติ รัตนวงศ์ (หัวหน้าแผนก)",
+      approved_at: new Date().toISOString(),
+      status: "pending",
+      comment: "รอบตรวจช่วงเช้าเรียบร้อย รอดำเนินการเปลี่ยนหลอดไฟตามที่แจ้งซ่อม",
+    },
+  },
+
+  "QCS-2026-002": {
+    record_id: "MAT-REC-2026-002",
+    schedule_id: "QCS-2026-002",
+    template_id: "TPL-ROLLERMILL-001",
+    date: new Date().toISOString().split("T")[0],
+    cells: {
+      // Shift A data
+      "shift_a_motor_a_B1B2": { numeric_value: 24.5, logged_by: "มานะ (กะ A)", logged_at: "08:30" },
+      "shift_a_motor_a_B3": { numeric_value: 26.2, logged_by: "มานะ (กะ A)", logged_at: "08:30" },
+      "shift_a_motor_a_B4": { numeric_value: 25.0, logged_by: "มานะ (กะ A)", logged_at: "08:31" },
+      "shift_a_motor_a_B5": { numeric_value: 27.1, logged_by: "มานะ (กะ A)", logged_at: "08:31" },
+      "shift_a_motor_a_C1AC1A_I": { numeric_value: 28.3, logged_by: "มานะ (กะ A)", logged_at: "08:32" },
+      "shift_a_motor_a_C1AC1A_II": { numeric_value: 28.0, logged_by: "มานะ (กะ A)", logged_at: "08:32" },
+      "shift_a_motor_a_C1BC2B": { numeric_value: 29.1, logged_by: "มานะ (กะ A)", logged_at: "08:33" },
+      "shift_a_motor_a_C3": { numeric_value: 24.0, logged_by: "มานะ (กะ A)", logged_at: "08:33" },
+      "shift_a_motor_a_C4": { numeric_value: 25.2, logged_by: "มานะ (กะ A)", logged_at: "08:34" },
+      "shift_a_motor_a_C5": { numeric_value: 26.1, logged_by: "มานะ (กะ A)", logged_at: "08:34" },
+      "shift_a_motor_a_C6": { numeric_value: 24.8, logged_by: "มานะ (กะ A)", logged_at: "08:35" },
+      "shift_a_motor_a_C7": { numeric_value: 25.5, logged_by: "มานะ (กะ A)", logged_at: "08:35" },
+      "shift_a_motor_a_C8": { numeric_value: 26.0, logged_by: "มานะ (กะ A)", logged_at: "08:36" },
+      "shift_a_motor_a_C10": { numeric_value: 27.4, logged_by: "มานะ (กะ A)", logged_at: "08:36" },
+
+      "shift_a_2f1g_max_B1B2": { numeric_value: 32.0 },
+      "shift_a_2f1g_max_B3": { numeric_value: 34.0 },
+      "shift_a_2f1g_min_B1B2": { numeric_value: 18.0 },
+      "shift_a_2f1g_min_B3": { numeric_value: 17.5 },
+
+      "shift_a_break_release_B1B2": { status: "normal" },
+      "shift_a_break_release_B3": { status: "normal" },
+      "shift_a_break_release_B4": { status: "normal" },
+      "shift_a_break_release_B5": { status: "normal" },
+
+      "shift_a_roller_B1B2": { status: "normal" },
+      "shift_a_roller_B3": { status: "normal" },
+      "shift_a_roller_B4": { status: "normal" },
+      "shift_a_roller_B5": { status: "normal" },
+      "shift_a_roller_C1AC1A_I": { status: "normal" },
+      "shift_a_roller_C1AC1A_II": { status: "normal" },
+      "shift_a_roller_C1BC2B": { status: "normal" },
+      "shift_a_roller_C3": { status: "normal" },
+      "shift_a_roller_C4": { status: "normal" },
+      "shift_a_roller_C5": { status: "normal" },
+      "shift_a_roller_C6": { status: "normal" },
+      "shift_a_roller_C7": { status: "normal" },
+      "shift_a_roller_C8": { status: "normal" },
+      "shift_a_roller_C10": { status: "normal" },
+    },
+    shift_signoffs: {
+      "shift_a": { inspector_name: "มานะ วงศ์ไทย", inspector_time: "15:45", verifier_name: "ณัฐพงศ์ QC", verifier_time: "15:55" },
+    },
+    supervisor_approval: {
+      status: "pending",
+    },
+  },
+};
+
