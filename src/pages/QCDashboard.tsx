@@ -1017,60 +1017,85 @@ export default function QCDashboard() {
                 </Card>
 
                 {/* Schedule list */}
-                <div className="grid gap-3">
+                <div className="grid gap-3.5">
                   {filtered.map((item) => {
                     const s = STATUS_CONFIG[item.status];
+                    const statusBorderColor =
+                      item.status === "in-progress" ? "border-l-cyan-500" :
+                      item.status === "done" ? "border-l-emerald-500" :
+                      item.status === "missed" ? "border-l-red-500" : "border-l-blue-500";
+
                     return (
                       <Card
                         key={item.schedule_id}
-                        className="p-4.5 hover:shadow-md transition-all border-l-4 border-l-primary flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 cursor-pointer"
+                        className={cn(
+                          "group p-4 sm:p-5 pl-5 sm:pl-6 hover:shadow-md transition-all border-l-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 cursor-pointer",
+                          statusBorderColor
+                        )}
                         onClick={() => setSelectedSchedule(item)}
                       >
-                        <div className="space-y-1.5 flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-mono text-xs text-primary font-bold">{item.schedule_id}</span>
-                            <h3 className="font-bold text-sm text-foreground truncate">{item.title}</h3>
-                            <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold border", s.cls)}>
+                        <div className="space-y-2.5 flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2.5">
+                            <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 tracking-wide shrink-0">
+                              {item.schedule_id}
+                            </span>
+                            <h3 className="font-bold text-sm sm:text-base text-foreground leading-snug">
+                              {item.title}
+                            </h3>
+                            <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold border shadow-2xs shrink-0", s.cls)}>
                               {s.icon}{s.label}
                             </span>
                             {item.matrix_template_id && (
-                              <span className="bg-blue-100 text-blue-800 text-[11px] font-bold px-2 py-0.5 rounded-full border border-blue-200">
+                              <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-800 shrink-0">
                                 {item.matrix_template_id.includes("HOURLY") ? "⏱️ ตาราง 24 ชม." : "🏭 ตารางกะ & จุดเครื่องจักร"}
                               </span>
                             )}
                           </div>
 
-                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{item.machine_name} ({item.zone || "-"})</span>
-                            <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{item.scheduled_date}</span>
-                            <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{item.scheduled_time_start} - {item.scheduled_time_end}</span>
-                            <span className="flex items-center gap-1"><User className="h-3.5 w-3.5" />{item.assigned_to_name}</span>
+                          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground pt-0.5">
+                            <span className="inline-flex items-center gap-1.5">
+                              <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                              <span className="text-foreground/80 font-medium">{item.machine_name}</span>
+                              <span className="text-muted-foreground">({item.zone || "-"})</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1.5">
+                              <Calendar className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                              <span>{item.scheduled_date}</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1.5">
+                              <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                              <span>{item.scheduled_time_start} - {item.scheduled_time_end}</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1.5">
+                              <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                              <span>{item.assigned_to_name}</span>
+                            </span>
                           </div>
 
                           {item.matrix_progress && (
-                            <div className="flex items-center gap-2 pt-1 max-w-xs">
-                              <div className="h-2 flex-1 bg-slate-100 rounded-full overflow-hidden border">
+                            <div className="flex items-center gap-3 pt-1.5 max-w-sm">
+                              <div className="h-2 flex-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200/70 dark:border-slate-700">
                                 <div
-                                  className="h-full bg-blue-600 rounded-full"
+                                  className="h-full bg-blue-600 rounded-full transition-all"
                                   style={{ width: `${Math.round((item.matrix_progress.logged_slots / item.matrix_progress.total_slots) * 100)}%` }}
                                 />
                               </div>
-                              <span className="text-[10px] text-muted-foreground font-mono">
+                              <span className="text-xs text-muted-foreground font-mono font-medium shrink-0">
                                 ลงตรวจ {item.matrix_progress.logged_slots}/{item.matrix_progress.total_slots} รอบ
                               </span>
                             </div>
                           )}
                         </div>
 
-                        <div className="flex items-center gap-2 shrink-0 self-end sm:self-center" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center pt-2 sm:pt-0 pl-0 sm:pl-3" onClick={(e) => e.stopPropagation()}>
                           <Button
                             size="sm"
-                            className="bg-primary text-primary-foreground gap-1 text-xs font-semibold"
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 text-xs font-semibold px-3.5 py-2 shadow-xs transition-all"
                             onClick={() => navigate(`/qc/record/${item.schedule_id}`)}
                           >
                             <FileSpreadsheet className="h-3.5 w-3.5" /> ลงเวลาตรวจ
                           </Button>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
                         </div>
                       </Card>
                     );
