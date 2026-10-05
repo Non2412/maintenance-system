@@ -111,9 +111,11 @@ function TechFilterChips({
   );
 }
 
-// ─── Main Component ────────────────────────────────────────────────────────────
+interface TechnicianHistoryProps {
+  embedded?: boolean;
+}
 
-export default function TechnicianHistory() {
+export default function TechnicianHistory({ embedded = false }: TechnicianHistoryProps = {}) {
   const navigate = useNavigate();
   const requests = useRequests();
 
@@ -246,34 +248,10 @@ export default function TechnicianHistory() {
     return d.toLocaleDateString("th-TH", { weekday: "short", day: "numeric", month: "long", year: "numeric" }) + label;
   };
 
-  return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-30 bg-gradient-primary text-primary-foreground shadow-md">
-        <div className="px-4 py-3 flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10" onClick={() => navigate("/admin/dashboard")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="h-9 w-9 rounded-md bg-secondary grid place-items-center shrink-0">
-            <History className="h-5 w-5 text-secondary-foreground" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-xs uppercase tracking-wider text-primary-foreground/70">Admin</div>
-            <h1 className="font-bold truncate">ประวัติการทำงานของช่าง</h1>
-          </div>
-          <span className="hidden sm:block rounded-full bg-white/10 px-3 py-1 text-xs font-medium">
-            ทั้งหมด {allRows.length} รายการ
-          </span>
-          <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10" onClick={() => navigate("/")}>
-            <LogOut className="h-5 w-5" />
-          </Button>
-        </div>
-      </header>
-
-      <main className="flex-1 p-4 sm:p-6 space-y-6 max-w-7xl mx-auto w-full">
-
-        {/* KPI */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+  const bodyContent = (
+    <div className="space-y-6">
+      {/* KPI */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <MiniKpi label="งานทั้งหมด" value={kpi.total} accentClass="border-l-primary" icon={<Wrench className="h-5 w-5" />} />
           <MiniKpi label="เสร็จสิ้น" value={kpi.done} accentClass="border-l-emerald-500" icon={<CheckCircle2 className="h-5 w-5 text-emerald-500" />} />
           <MiniKpi label="อัตราปิดงาน" value={`${kpi.completionRate}%`} accentClass="border-l-cyan-500" icon={<BarChart3 className="h-5 w-5 text-cyan-500" />} />
@@ -379,7 +357,7 @@ export default function TechnicianHistory() {
                           "relative flex items-start gap-3 rounded-xl p-4 border transition-all hover:shadow-sm cursor-pointer",
                           STATUS_ROW_BG[row.status] ?? "bg-card"
                         )}
-                          onClick={() => navigate(`/admin/technician/${row.tech_id}`)}
+                          onClick={() => navigate(`/admin/technician/${row.tech_id}`, { state: { from: "technician-history" } })}
                         >
                           {/* Timeline dot */}
                           <div className={cn("absolute -left-9 top-5 h-3 w-3 rounded-full border-2 border-background", STATUS_DOT[row.status])} />
@@ -549,7 +527,7 @@ export default function TechnicianHistory() {
                               size="sm"
                               variant="ghost"
                               className="h-7 px-2 text-xs text-primary hover:bg-primary/10"
-                              onClick={() => navigate(`/admin/technician/${row.tech_id}`)}
+                              onClick={() => navigate(`/admin/technician/${row.tech_id}`, { state: { from: "technician-history" } })}
                             >
                               ดูประวัติช่าง <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
                             </Button>
@@ -609,7 +587,7 @@ export default function TechnicianHistory() {
                     size="sm"
                     variant="outline"
                     className="shrink-0"
-                    onClick={() => navigate(`/admin/technician/${t.id}`)}
+                    onClick={() => navigate(`/admin/technician/${t.id}`, { state: { from: "technician-history" } })}
                   >
                     ดูรายละเอียด <ChevronRight className="h-4 w-4 ml-1" />
                   </Button>
@@ -620,14 +598,49 @@ export default function TechnicianHistory() {
         )}
 
         {/* Footer nav */}
-        <div className="flex flex-wrap gap-3 pb-4">
-          <Button variant="outline" className="gap-2" onClick={() => navigate("/admin/dashboard")}>
-            <BarChart3 className="h-4 w-4" />Admin Dashboard
+        {!embedded && (
+          <div className="flex flex-wrap gap-3 pb-4">
+            <Button variant="outline" className="gap-2" onClick={() => navigate("/admin/dashboard")}>
+              <BarChart3 className="h-4 w-4" />Admin Dashboard
+            </Button>
+            <Button variant="outline" className="gap-2" onClick={() => navigate("/admin/spare-requests")}>
+              <Package className="h-4 w-4" />ความต้องการอะไหล่
+            </Button>
+          </div>
+        )}
+    </div>
+  );
+
+  if (embedded) {
+    return bodyContent;
+  }
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header */}
+      <header className="sticky top-0 z-30 bg-gradient-primary text-primary-foreground shadow-md">
+        <div className="px-4 py-3 flex items-center gap-3">
+          <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10" onClick={() => navigate("/admin/dashboard")}>
+            <ArrowLeft className="h-5 w-5" />
           </Button>
-          <Button variant="outline" className="gap-2" onClick={() => navigate("/admin/spare-requests")}>
-            <Package className="h-4 w-4" />ความต้องการอะไหล่
+          <div className="h-9 w-9 rounded-md bg-secondary grid place-items-center shrink-0">
+            <History className="h-5 w-5 text-secondary-foreground" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-xs uppercase tracking-wider text-primary-foreground/70">Admin</div>
+            <h1 className="font-bold truncate">ประวัติการทำงานของช่าง</h1>
+          </div>
+          <span className="hidden sm:block rounded-full bg-white/10 px-3 py-1 text-xs font-medium">
+            ทั้งหมด {allRows.length} รายการ
+          </span>
+          <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10" onClick={() => navigate("/")}>
+            <LogOut className="h-5 w-5" />
           </Button>
         </div>
+      </header>
+
+      <main className="flex-1 p-4 sm:p-6 space-y-6 max-w-7xl mx-auto w-full">
+        {bodyContent}
       </main>
     </div>
   );

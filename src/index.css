@@ -122,6 +122,46 @@
     font-weight: 600;
     letter-spacing: -0.01em;
   }
+
+  /* Date and time input picker indicator alignment */
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"] {
+    position: relative;
+    cursor: pointer;
+    accent-color: hsl(var(--primary));
+    color-scheme: light;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-inline-start: auto;
+    margin-left: auto;
+    cursor: pointer;
+    opacity: 0.65;
+    padding: 2px;
+    border-radius: 4px;
+    transition: opacity 0.2s, background-color 0.2s;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator:hover,
+  input[type="time"]::-webkit-calendar-picker-indicator:hover,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+    background-color: hsl(var(--accent) / 0.1);
+  }
+
+  input[type="date"]:disabled::-webkit-calendar-picker-indicator,
+  input[type="time"]:disabled::-webkit-calendar-picker-indicator,
+  input[type="datetime-local"]:disabled::-webkit-calendar-picker-indicator {
+    cursor: not-allowed;
+    opacity: 0.3;
+  }
 }
 
 @layer components {

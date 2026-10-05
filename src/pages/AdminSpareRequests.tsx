@@ -148,9 +148,11 @@ function Row({ label, value, mono, bold }: { label: string; value: string; mono?
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+interface AdminSpareRequestsProps {
+  embedded?: boolean;
+}
 
-export default function AdminSpareRequests() {
+export default function AdminSpareRequests({ embedded = false }: AdminSpareRequestsProps = {}) {
   const navigate = useNavigate();
   const [requests, setRequests] = useState<SparePartRequest[]>(MOCK_SPARE_PART_REQUESTS);
   const [search, setSearch] = useState("");
@@ -203,46 +205,10 @@ export default function AdminSpareRequests() {
     toast.error(`ปฏิเสธคำขอ ${item.sr_id}`);
   };
 
-  return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-30 bg-gradient-primary text-primary-foreground shadow-md">
-        <div className="px-4 py-3 flex items-center gap-3">
-          <Button
-            variant="ghost" size="icon"
-            className="text-primary-foreground hover:bg-white/10"
-            onClick={() => navigate("/admin/dashboard")}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="h-9 w-9 rounded-md bg-secondary grid place-items-center shrink-0">
-            <Package className="h-5 w-5 text-secondary-foreground" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-xs uppercase tracking-wider text-primary-foreground/70">Admin</div>
-            <h1 className="font-bold truncate">ความต้องการอะไหล่จากช่าง</h1>
-          </div>
-          <div className="hidden sm:flex items-center gap-2">
-            {kpi.pending > 0 && (
-              <span className="flex items-center gap-1.5 rounded-full bg-amber-500/20 border border-amber-400/40 px-3 py-1 text-xs font-semibold">
-                <Clock className="h-3 w-3" /> รออนุมัติ {kpi.pending}
-              </span>
-            )}
-            {kpi.critical > 0 && (
-              <span className="flex items-center gap-1.5 rounded-full bg-red-500/20 border border-red-400/40 px-3 py-1 text-xs font-semibold">
-                <span className="h-2 w-2 rounded-full bg-red-400 animate-pulse" /> วิกฤติ {kpi.critical}
-              </span>
-            )}
-          </div>
-          <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10" onClick={() => navigate("/")}>
-            <LogOut className="h-5 w-5" />
-          </Button>
-        </div>
-      </header>
-
-      <main className="flex-1 p-4 sm:p-6 space-y-6 max-w-7xl mx-auto w-full">
-        {/* KPI Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+  const bodyContent = (
+    <div className="space-y-6">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
             { label: "คำขอทั้งหมด", value: kpi.total, cls: "border-l-primary", icon: <Package className="h-5 w-5" /> },
             { label: "รออนุมัติ", value: kpi.pending, cls: "border-l-amber-500", icon: <Clock className="h-5 w-5 text-amber-500" /> },
@@ -409,14 +375,64 @@ export default function AdminSpareRequests() {
 
         {/* Quick Link */}
         <div className="flex gap-3">
-          <Button variant="outline" className="gap-2" onClick={() => navigate("/admin/dashboard")}>
-            <LayoutDashboard className="h-4 w-4" />Dashboard Admin
-          </Button>
+          {!embedded && (
+            <Button variant="outline" className="gap-2" onClick={() => navigate("/admin/dashboard")}>
+              <LayoutDashboard className="h-4 w-4" />Dashboard Admin
+            </Button>
+          )}
           <Button variant="outline" className="gap-2" onClick={() => navigate("/spare-parts")}>
-            <Package className="h-4 w-4" />ระบบอะไหล่
+            <Package className="h-4 w-4" />ระบบจัดการสต็อกอะไหล่
           </Button>
         </div>
-      </main>
+    </div>
+  );
+
+  return (
+    <>
+      {!embedded ? (
+        <div className="min-h-screen bg-background flex flex-col">
+          {/* Header */}
+          <header className="sticky top-0 z-30 bg-gradient-primary text-primary-foreground shadow-md">
+            <div className="px-4 py-3 flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-primary-foreground hover:bg-white/10"
+                onClick={() => navigate("/admin/dashboard")}
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div className="h-9 w-9 rounded-md bg-secondary grid place-items-center shrink-0">
+                <Package className="h-5 w-5 text-secondary-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs uppercase tracking-wider text-primary-foreground/70">Admin</div>
+                <h1 className="font-bold truncate">ความต้องการอะไหล่จากช่าง</h1>
+              </div>
+              <div className="hidden sm:flex items-center gap-2">
+                {kpi.pending > 0 && (
+                  <span className="flex items-center gap-1.5 rounded-full bg-amber-500/20 border border-amber-400/40 px-3 py-1 text-xs font-semibold">
+                    <Clock className="h-3 w-3" /> รออนุมัติ {kpi.pending}
+                  </span>
+                )}
+                {kpi.critical > 0 && (
+                  <span className="flex items-center gap-1.5 rounded-full bg-red-500/20 border border-red-400/40 px-3 py-1 text-xs font-semibold">
+                    <span className="h-2 w-2 rounded-full bg-red-400 animate-pulse" /> วิกฤติ {kpi.critical}
+                  </span>
+                )}
+              </div>
+              <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10" onClick={() => navigate("/")}>
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </div>
+          </header>
+          <main className="flex-1 p-4 sm:p-6 space-y-6 max-w-7xl mx-auto w-full">
+            {bodyContent}
+          </main>
+        </div>
+      ) : (
+        bodyContent
+      )}
 
       {/* Modals */}
       {selected && <DetailDrawer item={selected} onClose={() => setSelected(null)} />}
@@ -427,6 +443,6 @@ export default function AdminSpareRequests() {
           onConfirm={(reason) => handleReject(rejectTarget, reason)}
         />
       )}
-    </div>
+    </>
   );
 }

@@ -11,6 +11,8 @@ import {
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
+import { TimePicker } from "@/components/ui/time-picker";
 import { cn } from "@/lib/utils";
 import {
   MOCK_QC_SCHEDULES,
@@ -540,13 +542,13 @@ function NewScheduleModal({
 
           <div className="grid grid-cols-3 gap-3">
             <Field label="วันที่ตรวจ *">
-              <Input type="date" value={form.scheduled_date} onChange={(e) => upd("scheduled_date", e.target.value)} />
+              <DatePicker value={form.scheduled_date} onChange={(val) => upd("scheduled_date", val)} disablePast />
             </Field>
             <Field label="เวลาเริ่ม">
-              <Input type="time" value={form.scheduled_time_start} onChange={(e) => upd("scheduled_time_start", e.target.value)} />
+              <TimePicker value={form.scheduled_time_start} onChange={(val) => upd("scheduled_time_start", val)} placeholder="00:00" />
             </Field>
             <Field label="เวลาสิ้นสุด">
-              <Input type="time" value={form.scheduled_time_end} onChange={(e) => upd("scheduled_time_end", e.target.value)} />
+              <TimePicker value={form.scheduled_time_end} onChange={(val) => upd("scheduled_time_end", val)} placeholder="00:00" />
             </Field>
           </div>
         </div>

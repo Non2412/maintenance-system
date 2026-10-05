@@ -1,5 +1,8 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useMemo, useState, useEffect } from "react";
+import { useNavigate, useLocation, useSearchParams, useParams } from "react-router-dom";
+import AdminSpareRequests from "./AdminSpareRequests.tsx";
+import TechnicianHistory from "./TechnicianHistory.tsx";
+import TechnicianDetail from "./TechnicianDetail.tsx";
 import {
   BarChart,
   Bar,
@@ -33,6 +36,7 @@ import {
   ClipboardList,
   ShieldAlert,
   ArrowRight,
+  ArrowLeft,
   History,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -112,14 +116,12 @@ const NAV_ITEMS: { key: NavKey; label: string; sublabel: string; icon: React.Rea
     label: "ขออะไหล่",
     sublabel: "คำขอจากช่าง",
     icon: <ShieldAlert className="h-5 w-5" />,
-    href: "/admin/spare-requests",
   },
   {
     key: "technician-history",
     label: "ประวัติช่าง",
     sublabel: "Timeline & รายงาน",
     icon: <History className="h-5 w-5" />,
-    href: "/admin/technician-history",
   },
 ];
 
@@ -365,7 +367,15 @@ function PipelineSection({
   );
 }
 
-function TeamSection({ techPerf, navigate }: { techPerf: ReturnType<typeof useTechPerf>; navigate: (p: string) => void }) {
+function TeamSection({
+  techPerf,
+  navigate,
+  onNavigateNav,
+}: {
+  techPerf: ReturnType<typeof useTechPerf>;
+  navigate: (p: string) => void;
+  onNavigateNav?: (key: NavKey) => void;
+}) {
   return (
     <div className="space-y-6">
       <Card className="p-5">
@@ -426,7 +436,7 @@ function TeamSection({ techPerf, navigate }: { techPerf: ReturnType<typeof useTe
               </div>
               <button
                 className="w-full flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-medium text-primary hover:bg-primary/5 transition-colors"
-                onClick={() => navigate(`/admin/technician/${tech.id}`)}
+                onClick={() => navigate(`/admin/technician/${tech.id}`, { state: { from: "team" } })}
               >
                 ดูรายละเอียด <ChevronRight className="h-3.5 w-3.5" />
               </button>
@@ -440,7 +450,11 @@ function TeamSection({ techPerf, navigate }: { techPerf: ReturnType<typeof useTe
           <p className="text-sm font-semibold">ประวัติและ Timeline การทำงานของช่างทั้งหมด</p>
           <p className="text-xs text-muted-foreground">ดูรายงานการปิดงาน, เวลาที่ใช้ และอะไหล่ที่เบิกระดับช่างรายบุคคล</p>
         </div>
-        <Button onClick={() => navigate("/admin/technician-history")} className="gap-1.5 shrink-0" size="sm">
+        <Button
+          onClick={() => (onNavigateNav ? onNavigateNav("technician-history") : navigate("/admin/technician-history"))}
+          className="gap-1.5 shrink-0"
+          size="sm"
+        >
           <History className="h-4 w-4" /> ดูประวัติการทำงาน <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
@@ -476,8 +490,13 @@ function useTechPerf(requests: WorkRequest[]) {
     }), [requests]);
 }
 
-// ─── Spare Parts Summary Section ─────────────────────────────────────────────
-function SpareSection({ navigate }: { navigate: (p: string) => void }) {
+function SpareSection({
+  navigate,
+  onNavigateNav,
+}: {
+  navigate: (p: string) => void;
+  onNavigateNav?: (key: NavKey) => void;
+}) {
   const parts = MOCK_SPARE_PARTS_EXTENDED;
   const transactions = MOCK_SPARE_PART_TRANSACTIONS;
   const out = parts.filter((p) => p.stock === 0).length;
@@ -561,7 +580,11 @@ function SpareSection({ navigate }: { navigate: (p: string) => void }) {
             <Button variant="outline" size="sm" className="flex-1 gap-1" onClick={() => navigate('/spare-parts')}>
               ไปยังระบบจัดการอะไหล่ <ArrowRight className="h-3.5 w-3.5" />
             </Button>
-            <Button size="sm" className="flex-1 gap-1 bg-amber-500 hover:bg-amber-600 text-white" onClick={() => navigate('/admin/spare-requests')}>
+            <Button
+              size="sm"
+              className="flex-1 gap-1 bg-amber-500 hover:bg-amber-600 text-white"
+              onClick={() => (onNavigateNav ? onNavigateNav("spare-requests") : navigate("/admin/spare-requests"))}
+            >
               <ShieldAlert className="h-3.5 w-3.5" /> ดูคำขออะไหล่จากช่าง
             </Button>
           </div>
@@ -645,12 +668,72 @@ function ChecksheetSection({ navigate }: { navigate: (p: string) => void }) {
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-export default function AdminDashboard() {
+interface AdminDashboardProps {
+  defaultTab?: NavKey;
+}
+
+const VALID_TABS: NavKey[] = [
+  "overview",
+  "pipeline",
+  "team",
+  "spare",
+  "checksheet",
+  "spare-requests",
+  "technician-history",
+];
+
+export default function AdminDashboard({ defaultTab }: AdminDashboardProps = {}) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const params = useParams<{ id?: string }>();
+  const [searchParams] = useSearchParams();
   const requests = useRequests();
-  const [activeNav, setActiveNav] = useState<NavKey>("overview");
+
+  const isTechDetail = Boolean(params.id) || location.pathname.startsWith("/admin/technician/");
+  const techId = params.id || (isTechDetail ? location.pathname.split("/admin/technician/")[1]?.split("/")[0] : undefined);
+
+  const getInitialTab = (): NavKey => {
+    if (isTechDetail) {
+      if (location.state?.from === "team") return "team";
+      return "technician-history";
+    }
+    if (defaultTab && VALID_TABS.includes(defaultTab)) return defaultTab;
+    if (location.pathname === "/admin/spare-requests") return "spare-requests";
+    if (location.pathname === "/admin/technician-history") return "technician-history";
+    const tabParam = searchParams.get("tab") as NavKey | null;
+    if (tabParam && VALID_TABS.includes(tabParam)) return tabParam;
+    return "overview";
+  };
+
+  const [activeNav, setActiveNav] = useState<NavKey>(getInitialTab);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    const current = getInitialTab();
+    setActiveNav(current);
+  }, [location.pathname, searchParams, defaultTab, isTechDetail]);
+
+  const handleNavSelect = (key: NavKey) => {
+    setActiveNav(key);
+    setSidebarOpen(false);
+    if (key === "spare-requests") {
+      navigate("/admin/spare-requests", { replace: true });
+    } else if (key === "technician-history") {
+      navigate("/admin/technician-history", { replace: true });
+    } else if (key === "overview") {
+      navigate("/admin/dashboard", { replace: true });
+    } else {
+      navigate(`/admin/dashboard?tab=${key}`, { replace: true });
+    }
+  };
+
+  const handleTechDetailBack = () => {
+    if (location.state?.from === "team") {
+      navigate("/admin/dashboard?tab=team");
+    } else {
+      navigate("/admin/technician-history");
+    }
+  };
 
   const kpi = useKpi(requests);
   const techPerf = useTechPerf(requests);
@@ -687,7 +770,7 @@ export default function AdminDashboard() {
 
   const maxPipelineCount = Math.max(...statusPipeline.map((s) => s.count), 1);
 
-  const activeNavItem = NAV_ITEMS.find((n) => n.key === activeNav)!;
+  const activeNavItem = NAV_ITEMS.find((n) => n.key === activeNav) || NAV_ITEMS[0];
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -776,14 +859,7 @@ export default function AdminDashboard() {
               return (
                 <button
                   key={item.key}
-                  onClick={() => {
-                    if (item.href) {
-                      navigate(item.href);
-                    } else {
-                      setActiveNav(item.key);
-                    }
-                    setSidebarOpen(false);
-                  }}
+                  onClick={() => handleNavSelect(item.key)}
                   className={cn(
                     "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150",
                     isActive
@@ -798,7 +874,14 @@ export default function AdminDashboard() {
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium">{item.label}</p>
                       {pendingBadge > 0 && (
-                        <span className="bg-amber-500 text-white rounded-full text-[10px] font-bold px-1.5 py-0.2">
+                        <span
+                          className={cn(
+                            "min-w-5 h-5 px-1.5 rounded-full text-[11px] font-bold flex items-center justify-center shadow-sm transition-all",
+                            isActive
+                              ? "bg-red-500 text-white ring-2 ring-white"
+                              : "bg-red-500 text-white ring-1 ring-white/20"
+                          )}
+                        >
                           {pendingBadge}
                         </span>
                       )}
@@ -847,24 +930,66 @@ export default function AdminDashboard() {
         {/* ── Main Content ─────────────────────────────────────────────────── */}
         <main className="flex-1 overflow-y-auto min-w-0">
           {/* Page title bar */}
-          <div className="sticky top-0 z-10 bg-background/90 backdrop-blur border-b px-6 py-3 flex items-center gap-2">
-            <div className="h-6 w-6 rounded grid place-items-center text-primary">{activeNavItem.icon}</div>
-            <div>
-              <h2 className="font-semibold text-sm leading-none">{activeNavItem.label}</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">{activeNavItem.sublabel}</p>
+          <div className="sticky top-0 z-10 bg-background/90 backdrop-blur border-b px-6 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {isTechDetail ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleTechDetailBack}
+                    className="gap-1.5 -ml-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    ย้อนกลับ
+                  </Button>
+                  <div className="h-4 w-px bg-border" />
+                  <div className="h-6 w-6 rounded grid place-items-center text-primary">
+                    <Users className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="font-semibold text-sm leading-none">
+                      {techId && TECHNICIAN_MAP[techId]?.name ? `รายละเอียดช่าง: ${TECHNICIAN_MAP[techId].name}` : "รายละเอียดช่าง"}
+                    </h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {techId && TECHNICIAN_MAP[techId]?.department ? `${TECHNICIAN_MAP[techId].department} · ${techId}` : "ประวัติและผลงานรายบุคคล"}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="h-6 w-6 rounded grid place-items-center text-primary">{activeNavItem.icon}</div>
+                  <div>
+                    <h2 className="font-semibold text-sm leading-none">{activeNavItem.label}</h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">{activeNavItem.sublabel}</p>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
           <div className="p-6 animate-slide-up">
-            {activeNav === "overview" && (
-              <OverviewSection kpi={kpi} categoryData={categoryData} priorityData={priorityData} />
+            {isTechDetail && techId ? (
+              <TechnicianDetail
+                embedded
+                id={techId}
+                onBack={handleTechDetailBack}
+              />
+            ) : (
+              <>
+                {activeNav === "overview" && (
+                  <OverviewSection kpi={kpi} categoryData={categoryData} priorityData={priorityData} />
+                )}
+                {activeNav === "pipeline" && (
+                  <PipelineSection statusPipeline={statusPipeline} urgentJobs={urgentJobs} maxPipelineCount={maxPipelineCount} />
+                )}
+                {activeNav === "team" && <TeamSection techPerf={techPerf} navigate={navigate} onNavigateNav={handleNavSelect} />}
+                {activeNav === "spare" && <SpareSection navigate={navigate} onNavigateNav={handleNavSelect} />}
+                {activeNav === "checksheet" && <ChecksheetSection navigate={navigate} />}
+                {activeNav === "spare-requests" && <AdminSpareRequests embedded />}
+                {activeNav === "technician-history" && <TechnicianHistory embedded />}
+              </>
             )}
-            {activeNav === "pipeline" && (
-              <PipelineSection statusPipeline={statusPipeline} urgentJobs={urgentJobs} maxPipelineCount={maxPipelineCount} />
-            )}
-            {activeNav === "team" && <TeamSection techPerf={techPerf} navigate={navigate} />}
-            {activeNav === "spare" && <SpareSection navigate={navigate} />}
-            {activeNav === "checksheet" && <ChecksheetSection navigate={navigate} />}
           </div>
         </main>
       </div>

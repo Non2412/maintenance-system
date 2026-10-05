@@ -180,19 +180,39 @@ function KpiSection({ requests, techId }: { requests: WorkRequest[]; techId: str
 
 // ─── Main ──────────────────────────────────────────────────────────────────────
 
-export default function TechnicianDetail() {
-  const { id } = useParams<{ id: string }>();
+interface TechnicianDetailProps {
+  embedded?: boolean;
+  id?: string;
+  onBack?: () => void;
+}
+
+export default function TechnicianDetail({
+  embedded = false,
+  id: propId,
+  onBack,
+}: TechnicianDetailProps = {}) {
+  const params = useParams<{ id: string }>();
   const navigate = useNavigate();
   const requests = useRequests();
   const [activeTab, setActiveTab] = useState<Tab>("jobs");
 
+  const id = propId || params.id;
   const tech = id ? TECHNICIAN_MAP[id] : undefined;
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      navigate(-1);
+    }
+  };
+
   if (!tech) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+      <div className="p-12 flex flex-col items-center justify-center gap-4">
         <AlertTriangle className="h-12 w-12 text-amber-400" />
         <p className="text-lg font-semibold">ไม่พบข้อมูลช่าง</p>
-        <Button onClick={() => navigate("/admin/dashboard")}>กลับ Dashboard</Button>
+        <Button onClick={handleBack}>ย้อนกลับ</Button>
       </div>
     );
   }
@@ -206,62 +226,49 @@ export default function TechnicianDetail() {
 
   const completionRate = mine.length > 0 ? Math.round((doneJobs.length / mine.length) * 100) : 0;
 
-  return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-30 bg-gradient-primary text-primary-foreground shadow-md">
-        <div className="px-4 py-3 flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10" onClick={() => navigate("/admin/dashboard")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="h-10 w-10 rounded-full bg-secondary grid place-items-center text-secondary-foreground font-bold shrink-0">
+  const bodyContent = (
+    <div className="space-y-6">
+      {/* Profile Card */}
+      <div className="rounded-2xl bg-gradient-primary text-primary-foreground p-5 sm:p-6 shadow-md">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="h-16 w-16 rounded-2xl bg-secondary grid place-items-center text-secondary-foreground font-bold text-2xl shrink-0 shadow-inner">
             {tech.name.charAt(0)}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-xs uppercase tracking-wider text-primary-foreground/70">รายละเอียดช่าง · {tech.technician_id}</div>
-            <h1 className="font-bold truncate">{tech.name}</h1>
-          </div>
-          <div className="hidden sm:flex items-center gap-2">
-            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium">{tech.department}</span>
-            <span className="rounded-full bg-emerald-500/20 border border-emerald-400/40 px-3 py-1 text-xs font-semibold">
-              ปิดงาน {completionRate}%
-            </span>
-          </div>
-          <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10" onClick={() => navigate("/")}>
-            <LogOut className="h-5 w-5" />
-          </Button>
-        </div>
-      </header>
-
-      {/* Profile Card */}
-      <div className="bg-gradient-primary text-primary-foreground px-6 pb-6">
-        <div className="flex items-center gap-4 max-w-4xl mx-auto">
-          <div className="h-16 w-16 rounded-2xl bg-secondary grid place-items-center text-secondary-foreground font-bold text-2xl shrink-0">
-            {tech.name.charAt(0)}
-          </div>
-          <div className="flex-1">
-            <h2 className="text-xl font-bold">{tech.name}</h2>
-            <p className="text-primary-foreground/70 text-sm">{tech.department} · {tech.technician_id}</p>
-            <div className="flex flex-wrap gap-2 mt-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-xl font-bold truncate">{tech.name}</h2>
+              <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-medium">
+                {tech.department} · {tech.technician_id}
+              </span>
+              <span className="rounded-full bg-emerald-500/20 border border-emerald-400/30 px-2.5 py-0.5 text-xs font-semibold">
+                ปิดงาน {completionRate}%
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2 mt-3">
               <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs">งานทั้งหมด: {mine.length}</span>
               <span className="rounded-full bg-emerald-500/20 border border-emerald-400/30 px-2.5 py-0.5 text-xs">เสร็จ: {doneJobs.length}</span>
-              <span className="rounded-full bg-cyan-500/20 border border-cyan-400/30 px-2.5 py-0.5 text-xs">กำลังทำ: {activeJobs.filter(r => r.status === "doing").length}</span>
+              <span className="rounded-full bg-cyan-500/20 border border-cyan-400/30 px-2.5 py-0.5 text-xs">กำลังทำ: {activeJobs.filter((r) => r.status === "doing").length}</span>
+              {mySpareRequests.length > 0 && (
+                <span className="rounded-full bg-amber-500/20 border border-amber-400/30 px-2.5 py-0.5 text-xs">
+                  ขออะไหล่: {mySpareRequests.length}
+                </span>
+              )}
             </div>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="sticky top-[57px] z-20 bg-background border-b">
-        <div className="flex overflow-x-auto px-4 max-w-4xl mx-auto">
+      <div className="border-b">
+        <div className="flex overflow-x-auto gap-2">
           {TABS.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={cn(
-                "flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors",
+                "flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors",
                 activeTab === tab.key
-                  ? "border-primary text-primary"
+                  ? "border-primary text-primary font-semibold"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               )}
             >
@@ -278,7 +285,7 @@ export default function TechnicianDetail() {
       </div>
 
       {/* Content */}
-      <main className="flex-1 p-4 sm:p-6 max-w-4xl mx-auto w-full">
+      <div className="space-y-4">
         {/* Tab: งานที่รับ */}
         {activeTab === "jobs" && (
           <Card className="p-5">
@@ -345,16 +352,35 @@ export default function TechnicianDetail() {
 
         {/* Tab: KPI */}
         {activeTab === "kpi" && <KpiSection requests={requests} techId={tech.technician_id} />}
+      </div>
+    </div>
+  );
 
-        {/* Footer nav */}
-        <div className="flex flex-wrap gap-3 pt-2">
-          <Button variant="outline" className="gap-2" onClick={() => navigate("/admin/dashboard")}>
-            <BarChart3 className="h-4 w-4" />Admin Dashboard
+  if (embedded) {
+    return bodyContent;
+  }
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      <header className="sticky top-0 z-30 bg-gradient-primary text-primary-foreground shadow-md">
+        <div className="px-4 py-3 flex items-center gap-3">
+          <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10" onClick={handleBack}>
+            <ArrowLeft className="h-5 w-5" />
           </Button>
-          <Button variant="outline" className="gap-2" onClick={() => navigate("/admin/technician-history")}>
-            <History className="h-4 w-4" />Timeline ประวัติช่างทั้งหมด
+          <div className="h-10 w-10 rounded-full bg-secondary grid place-items-center text-secondary-foreground font-bold shrink-0">
+            {tech.name.charAt(0)}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-xs uppercase tracking-wider text-primary-foreground/70">รายละเอียดช่าง · {tech.technician_id}</div>
+            <h1 className="font-bold truncate">{tech.name}</h1>
+          </div>
+          <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10" onClick={() => navigate("/")}>
+            <LogOut className="h-5 w-5" />
           </Button>
         </div>
+      </header>
+      <main className="flex-1 p-4 sm:p-6 max-w-5xl mx-auto w-full">
+        {bodyContent}
       </main>
     </div>
   );

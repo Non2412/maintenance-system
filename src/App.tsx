@@ -24,6 +24,8 @@ import ExecutiveDashboard from "./pages/ExecutiveDashboard.tsx";
 import ExecutivePurchaseApproval from "./pages/ExecutivePurchaseApproval.tsx";
 import ExecutiveUserApproval from "./pages/ExecutiveUserApproval.tsx";
 
+import ErrorBoundary from "./components/ErrorBoundary.tsx";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -31,30 +33,32 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/board" element={<TechnicianBoard />} />
-          <Route path="/request" element={<RequestForm />} />
-          <Route path="/notifications" element={<NotificationCenter />} />
-          <Route path="/assessment/:id" element={<AssessmentForm />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/spare-requests" element={<AdminSpareRequests />} />
-          <Route path="/admin/technician-history" element={<TechnicianHistory />} />
-          <Route path="/admin/technician/:id" element={<TechnicianDetail />} />
-          <Route path="/spare-parts" element={<SpareParts />} />
-          <Route path="/checksheet" element={<Checksheet />} />
-          {/* QC */}
-          <Route path="/qc/dashboard" element={<QCDashboard />} />
-          <Route path="/qc/schedule" element={<QCDashboard />} />
-          <Route path="/qc/record/:id" element={<QCRecordDetail />} />
-          {/* Executive */}
-          <Route path="/executive/dashboard" element={<ExecutiveDashboard />} />
-          <Route path="/executive/purchase-approval" element={<ExecutivePurchaseApproval />} />
-          <Route path="/executive/user-approval" element={<ExecutiveUserApproval />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <ErrorBoundary>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Login />} />
+            <Route path="/board" element={<TechnicianBoard />} />
+            <Route path="/request" element={<RequestForm />} />
+            <Route path="/notifications" element={<NotificationCenter />} />
+            <Route path="/assessment/:id" element={<AssessmentForm />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/spare-requests" element={<AdminDashboard defaultTab="spare-requests" />} />
+            <Route path="/admin/technician-history" element={<AdminDashboard defaultTab="technician-history" />} />
+            <Route path="/admin/technician/:id" element={<AdminDashboard />} />
+            <Route path="/spare-parts" element={<SpareParts />} />
+            <Route path="/checksheet" element={<Checksheet />} />
+            {/* QC */}
+            <Route path="/qc/dashboard" element={<QCDashboard />} />
+            <Route path="/qc/schedule" element={<QCDashboard />} />
+            <Route path="/qc/record/:id" element={<QCRecordDetail />} />
+            {/* Executive */}
+            <Route path="/executive/dashboard" element={<ExecutiveDashboard />} />
+            <Route path="/executive/purchase-approval" element={<ExecutivePurchaseApproval />} />
+            <Route path="/executive/user-approval" element={<ExecutiveUserApproval />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </ErrorBoundary>
     </TooltipProvider>
   </QueryClientProvider>
 );

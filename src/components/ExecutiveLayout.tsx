@@ -184,7 +184,14 @@ export default function ExecutiveLayout({
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium">{item.label}</p>
                       {item.badge !== undefined && item.badge > 0 && (
-                        <span className={cn("text-white rounded-full text-[10px] font-bold px-1.5 py-0.2", item.badgeColor)}>
+                        <span
+                          className={cn(
+                            "min-w-5 h-5 px-1.5 rounded-full text-[11px] font-bold flex items-center justify-center shadow-sm transition-all",
+                            isActive
+                              ? "bg-red-500 text-white ring-2 ring-white"
+                              : cn("text-white ring-1 ring-white/20", item.badgeColor || "bg-red-500")
+                          )}
+                        >
                           {item.badge}
                         </span>
                       )}
