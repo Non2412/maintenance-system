@@ -20,6 +20,7 @@ import {
   MapPin,
   Tag,
   Sparkles,
+  ArrowLeft,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -647,7 +648,12 @@ function CreateSparePartModal({ existingParts, onClose, onSave }: CreateSparePar
   );
 }
 
-export default function SpareParts() {
+interface SparePartsProps {
+  embedded?: boolean;
+  onBack?: () => void;
+}
+
+export default function SpareParts({ embedded = false, onBack }: SparePartsProps = {}) {
   const navigate = useNavigate();
   const [parts, setParts] = useState<SparePartExtended[]>(MOCK_SPARE_PARTS_EXTENDED);
   const [transactions, setTransactions] = useState<SparePartTransaction[]>(MOCK_SPARE_PART_TRANSACTIONS);
@@ -658,6 +664,16 @@ export default function SpareParts() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"stock" | "history">("stock");
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/admin/dashboard?tab=spare");
+    }
+  };
 
   const kpi = useMemo(() => {
     const total = parts.length;
@@ -720,42 +736,8 @@ export default function SpareParts() {
 
   const categories = Object.keys(SPARE_PART_CATEGORY_LABEL) as SparePartCategory[];
 
-  return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="sticky top-0 z-30 shadow-md" style={{ background: "linear-gradient(135deg, #6d28d9 0%, #4338ca 100%)", color: "white" }}>
-        <div className="px-4 py-3 flex items-center gap-3">
-          <div className="h-9 w-9 rounded-md grid place-items-center shrink-0" style={{ background: "rgba(255,255,255,0.2)" }}>
-            <Package className="h-5 w-5 text-white" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-xs uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.7)" }}>Spare Parts Management</div>
-            <h1 className="font-bold truncate">ระบบบริหารจัดการอะไหล่</h1>
-          </div>
-          <div className="hidden md:flex items-center gap-2">
-            {kpi.out > 0 && (
-              <span className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold" style={{ background: "rgba(239,68,68,0.3)", border: "1px solid rgba(239,68,68,0.4)" }}>
-                <span className="h-2 w-2 rounded-full bg-red-400 animate-pulse" />
-                หมดสต็อก {kpi.out}
-              </span>
-            )}
-            {kpi.low > 0 && (
-              <span className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold" style={{ background: "rgba(251,191,36,0.2)", border: "1px solid rgba(251,191,36,0.4)" }}>
-                ⚠ ใกล้หมด {kpi.low}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10" onClick={() => navigate("/admin/dashboard")} aria-label="Dashboard">
-              <LayoutDashboard className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10" onClick={() => navigate("/")} aria-label="ออกจากระบบ">
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1 p-4 md:p-6 space-y-6 max-w-7xl mx-auto w-full">
+  const bodyContent = (
+    <div className="space-y-6">
         {/* Notification Banner */}
         {notification && (
           <div className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 px-4 py-3 rounded-xl flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-2">
@@ -795,31 +777,34 @@ export default function SpareParts() {
 
         {/* Tabs & Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex gap-1 rounded-xl bg-muted p-1 w-fit">
+          <div className="flex gap-1 rounded-xl bg-muted p-1 w-full sm:w-fit">
             {[{ key: "stock", label: "รายการ Stock", icon: <Package className="h-4 w-4" /> }, { key: "history", label: "ประวัติการเคลื่อนไหว", icon: <History className="h-4 w-4" /> }].map((t) => (
               <button
                 key={t.key}
                 onClick={() => setActiveTab(t.key as "stock" | "history")}
-                className={cn("rounded-lg px-4 py-2 text-sm font-medium transition-all flex items-center gap-2",
-                  activeTab === t.key ? "bg-background shadow text-foreground" : "text-muted-foreground hover:text-foreground")}
+                className={cn(
+                  "flex-1 sm:flex-initial justify-center rounded-lg px-4 py-2.5 sm:py-2 text-xs sm:text-sm font-medium transition-all flex items-center gap-2 min-h-[40px] sm:min-h-0",
+                  activeTab === t.key ? "bg-background shadow text-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
               >
                 {t.icon}{t.label}
               </button>
             ))}
           </div>
 
-          <div className="flex gap-2 flex-wrap self-start sm:self-auto">
+          <div className="flex gap-2 flex-wrap self-start sm:self-auto w-full sm:w-auto">
             <Button
               variant="outline"
               onClick={() => navigate("/admin/spare-requests")}
-              className="border-amber-300 text-amber-800 bg-amber-50 hover:bg-amber-100 flex items-center gap-1.5 text-xs font-semibold"
+              className="flex-1 sm:flex-initial h-11 sm:h-9 border border-amber-400 bg-amber-50 hover:bg-amber-100 flex items-center justify-center gap-1.5 text-xs sm:text-sm font-semibold shadow-sm active:scale-[0.98] transition-all"
+              style={{ color: "#78350f" }}
             >
-              <ShieldAlert className="h-4 w-4 text-amber-600" />
-              <span>ความต้องการอะไหล่จากช่าง</span>
+              <ShieldAlert className="h-4 w-4 shrink-0" style={{ color: "#b45309" }} />
+              <span className="font-semibold" style={{ color: "#78350f" }}>ความต้องการอะไหล่จากช่าง</span>
             </Button>
             <Button
               onClick={() => setIsCreateModalOpen(true)}
-              className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-sm flex items-center gap-2 font-medium"
+              className="flex-1 sm:flex-initial h-11 sm:h-9 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-sm flex items-center justify-center gap-2 text-xs sm:text-sm font-medium active:scale-[0.98] transition-all"
             >
               <Plus className="h-4 w-4" />
               <span>สร้างรายการอะไหล่ใหม่</span>
@@ -833,23 +818,23 @@ export default function SpareParts() {
             <div className="flex flex-wrap gap-3 items-center">
               <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="ค้นหาชื่อ หรือรหัสอะไหล่..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+                <Input placeholder="ค้นหาชื่อ หรือรหัสอะไหล่..." className="pl-9 h-10 sm:h-9 text-xs sm:text-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
               </div>
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                 <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
-                <button onClick={() => setCatFilter("all")} className={cn("rounded-full px-3 py-1 text-xs font-medium border transition-colors", catFilter === "all" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted")}>ทั้งหมด</button>
+                <button onClick={() => setCatFilter("all")} className={cn("rounded-full px-3.5 py-1.5 text-xs font-medium border transition-colors min-h-[32px] flex items-center", catFilter === "all" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted")}>ทั้งหมด</button>
                 {categories.map((c) => (
-                  <button key={c} onClick={() => setCatFilter(c)} className={cn("rounded-full px-3 py-1 text-xs font-medium border transition-colors", catFilter === c ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted")}>
+                  <button key={c} onClick={() => setCatFilter(c)} className={cn("rounded-full px-3.5 py-1.5 text-xs font-medium border transition-colors min-h-[32px] flex items-center", catFilter === c ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted")}>
                     {SPARE_PART_CATEGORY_LABEL[c]}
                   </button>
                 ))}
               </div>
-              <div className="flex items-center gap-1 flex-wrap">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 {(["all", "ok", "low", "out"] as const).map((s) => {
                   const labels = { all: "ทุกสถานะ", ok: "🟢 ปกติ", low: "🟡 ใกล้หมด", out: "🔴 หมด" };
                   return (
                     <button key={s} onClick={() => setStatusFilter(s)}
-                      className={cn("rounded-full px-3 py-1 text-xs font-medium border transition-colors", statusFilter === s ? "bg-secondary text-secondary-foreground border-secondary" : "border-border hover:bg-muted")}>
+                      className={cn("rounded-full px-3.5 py-1.5 text-xs font-medium border transition-colors min-h-[32px] flex items-center", statusFilter === s ? "bg-secondary text-secondary-foreground border-secondary" : "border-border hover:bg-muted")}>
                       {labels[s]}
                     </button>
                   );
@@ -916,19 +901,19 @@ export default function SpareParts() {
                             <td className="px-4 py-3 hidden lg:table-cell text-xs font-mono">฿{formatPrice(p.unit_price)}</td>
                             <td className="px-4 py-3"><StockBadge status={s} /></td>
                             <td className="px-4 py-3 text-right">
-                              <div className="flex items-center justify-end gap-1">
+                              <div className="flex items-center justify-end gap-1.5">
                                 <button
                                   onClick={() => setModal({ part: p, mode: "issue" })}
                                   disabled={p.stock === 0}
-                                  className="rounded-md border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 disabled:opacity-40 disabled:cursor-not-allowed px-2 py-1 text-xs font-semibold transition-colors flex items-center gap-1"
+                                  className="rounded-md border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 disabled:opacity-40 disabled:cursor-not-allowed px-3 py-1.5 text-xs font-semibold transition-colors flex items-center gap-1 min-h-[32px] active:scale-95"
                                 >
-                                  <ArrowUpFromLine className="h-3 w-3" /> เบิก
+                                  <ArrowUpFromLine className="h-3.5 w-3.5" /> เบิก
                                 </button>
                                 <button
                                   onClick={() => setModal({ part: p, mode: "receive" })}
-                                  className="rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-2 py-1 text-xs font-semibold transition-colors flex items-center gap-1"
+                                  className="rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-3 py-1.5 text-xs font-semibold transition-colors flex items-center gap-1 min-h-[32px] active:scale-95"
                                 >
-                                  <ArrowDownToLine className="h-3 w-3" /> รับ
+                                  <ArrowDownToLine className="h-3.5 w-3.5" /> รับ
                                 </button>
                               </div>
                             </td>
@@ -984,7 +969,6 @@ export default function SpareParts() {
             </div>
           </Card>
         )}
-      </main>
 
       {modal && (
         <IssueReceiveModal part={modal.part} mode={modal.mode} onClose={() => setModal(null)} onConfirm={handleConfirm} />
@@ -997,6 +981,63 @@ export default function SpareParts() {
           onSave={handleCreatePart}
         />
       )}
+    </div>
+  );
+
+  if (embedded) {
+    return bodyContent;
+  }
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      <header className="sticky top-0 z-30 shadow-md" style={{ background: "linear-gradient(135deg, #6d28d9 0%, #4338ca 100%)", color: "white" }}>
+        <div className="px-4 py-3 flex items-center gap-2 sm:gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white hover:bg-white/10 shrink-0 gap-1.5 h-9 px-2.5 sm:px-3 text-xs sm:text-sm font-medium"
+            onClick={handleBack}
+            aria-label="ย้อนกลับ"
+            title="ย้อนกลับ"
+          >
+            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span>ย้อนกลับ</span>
+          </Button>
+          <div className="h-4 w-px bg-white/20" />
+          <div className="h-9 w-9 rounded-md grid place-items-center shrink-0" style={{ background: "rgba(255,255,255,0.2)" }}>
+            <Package className="h-5 w-5 text-white" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-xs uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.7)" }}>Spare Parts Management</div>
+            <h1 className="font-bold truncate text-sm sm:text-base">ระบบบริหารจัดการอะไหล่</h1>
+          </div>
+          <div className="hidden md:flex items-center gap-2">
+            {kpi.out > 0 && (
+              <span className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold" style={{ background: "rgba(239,68,68,0.3)", border: "1px solid rgba(239,68,68,0.4)" }}>
+                <span className="h-2 w-2 rounded-full bg-red-400 animate-pulse" />
+                หมดสต็อก {kpi.out}
+              </span>
+            )}
+            {kpi.low > 0 && (
+              <span className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold" style={{ background: "rgba(251,191,36,0.2)", border: "1px solid rgba(251,191,36,0.4)" }}>
+                ⚠ ใกล้หมด {kpi.low}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10" onClick={() => navigate("/admin/dashboard")} aria-label="Dashboard">
+              <LayoutDashboard className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10" onClick={() => navigate("/")} aria-label="ออกจากระบบ">
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1 p-4 md:p-6 space-y-6 max-w-7xl mx-auto w-full">
+        {bodyContent}
+      </main>
     </div>
   );
 }

@@ -46,7 +46,9 @@ const App = () => (
             <Route path="/admin/technician-history" element={<AdminDashboard defaultTab="technician-history" />} />
             <Route path="/admin/technician/:id" element={<AdminDashboard />} />
             <Route path="/spare-parts" element={<SpareParts />} />
-            <Route path="/checksheet" element={<Checksheet />} />
+            <Route path="/admin/spare-parts" element={<SpareParts />} />
+            <Route path="/checksheet" element={<AdminDashboard />} />
+            <Route path="/admin/checksheet" element={<AdminDashboard />} />
             {/* QC */}
             <Route path="/qc/dashboard" element={<QCDashboard />} />
             <Route path="/qc/schedule" element={<QCDashboard />} />

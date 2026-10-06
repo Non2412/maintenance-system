@@ -294,33 +294,33 @@ export default function QCRecordDetail() {
   const repairNeededCount = Object.values(recordData.cells).filter((c) => c.status === "repair_needed").length;
 
   return (
-    <div className="min-h-screen bg-slate-50/50 flex flex-col text-slate-800">
+    <div className="min-h-screen bg-slate-50/50 flex flex-col text-slate-800 w-full max-w-full overflow-x-clip md:overflow-x-visible">
       {/* ─── Web Header (Hidden during print) ────────────────────────────────── */}
       <header className="sticky top-0 z-30 bg-gradient-primary text-primary-foreground shadow-md print:hidden">
-        <div className="px-4 py-3 flex items-center justify-between gap-3 max-w-7xl mx-auto w-full">
-          <div className="flex items-center gap-3">
+        <div className="px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-2 sm:gap-3 max-w-7xl mx-auto w-full">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <Button
               variant="ghost"
               size="icon"
-              className="text-primary-foreground hover:bg-white/10"
+              className="text-primary-foreground hover:bg-white/10 shrink-0 h-8 w-8 sm:h-9 sm:w-9"
               onClick={() => navigate("/qc/dashboard")}
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs uppercase tracking-wider text-primary-foreground/70 font-mono">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="text-[10px] sm:text-xs uppercase tracking-wider text-primary-foreground/70 font-mono shrink-0">
                   {schedule.schedule_id}
                 </span>
-                <span className="bg-white/20 text-white text-[11px] px-2 py-0.5 rounded-full font-medium">
-                  {template.template_type === "hourly_matrix" ? "⏱️ ตาราง 24 ชม." : "🏭 ตารางกะ & จุดเครื่องจักร"}
+                <span className="bg-white/20 text-white text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded-full font-medium truncate max-w-[130px] sm:max-w-none">
+                  {template.template_type === "hourly_matrix" ? "⏱️ 24 ชม." : "🏭 ตารางกะ & จุดเครื่องจักร"}
                 </span>
               </div>
-              <h1 className="font-bold text-base sm:text-lg truncate max-w-md">{template.title}</h1>
+              <h1 className="font-bold text-xs sm:text-lg truncate max-w-full">{template.title}</h1>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {template.template_type === "hourly_matrix" && (
               <Button
                 size="sm"
@@ -333,29 +333,32 @@ export default function QCRecordDetail() {
             <Button
               size="sm"
               variant="outline"
-              className="bg-white/10 hover:bg-white/20 text-white border-white/20 gap-1.5"
+              className="bg-white/10 hover:bg-white/20 text-white border-white/20 gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3 text-xs shrink-0"
               onClick={() => window.print()}
+              title="พิมพ์เอกสาร"
             >
-              <Printer className="h-4 w-4" /> พิมพ์เอกสาร
+              <Printer className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+              <span>พิมพ์</span><span className="hidden sm:inline">เอกสาร</span>
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              className="text-primary-foreground hover:bg-white/10"
+              className="text-primary-foreground hover:bg-white/10 h-8 w-8 sm:h-9 sm:w-9 shrink-0"
               onClick={() => navigate("/")}
+              title="ออกจากระบบ"
             >
-              <LogOut className="h-5 w-5" />
+              <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
           </div>
         </div>
       </header>
 
       {/* ─── Main Content Canvas ─────────────────────────────────────────────── */}
-      <main className="flex-1 p-3 sm:p-6 max-w-7xl mx-auto w-full space-y-4 print:p-0 print:m-0 print:max-w-none">
+      <main className="flex-1 p-2 sm:p-6 max-w-7xl mx-auto w-full space-y-3 sm:space-y-4 print:p-0 print:m-0 print:max-w-none min-w-0">
 
         {/* ─── Quick Summary Bar (Web only) ─────────────────────────────────── */}
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-xl border shadow-sm print:hidden">
-          <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 sm:p-4 rounded-xl border shadow-sm print:hidden">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm">
             <span className="flex items-center gap-1.5 text-muted-foreground">
               <MapPin className="h-4 w-4 text-primary" /> {template.line_or_zone || schedule.zone || "สายการผลิต"}
             </span>
@@ -367,7 +370,7 @@ export default function QCRecordDetail() {
             </span>
           </div>
 
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-2 text-xs flex-wrap">
             <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-semibold border">
               บันทึกแล้ว {totalCellsCount} เซลล์
             </span>
@@ -396,28 +399,28 @@ export default function QCRecordDetail() {
         {/* ══════════════════════════════════════════════════════════════════════ */}
         {/* ─── OFFICIAL PRINT-PERFECT SHEET CONTAINER ─────────────────────────── */}
         {/* ══════════════════════════════════════════════════════════════════════ */}
-        <div className="bg-white border rounded-xl shadow-md p-4 sm:p-6 print:border-none print:shadow-none print:p-2 print:rounded-none">
+        <div className="bg-white border rounded-xl shadow-md p-2.5 sm:p-6 print:border-none print:shadow-none print:p-2 print:rounded-none">
           
           {/* ── Official Document Header ── */}
           <div className="border-b-2 border-slate-800 pb-3 mb-4 space-y-1">
-            <div className="flex justify-between items-start">
-              <div>
-                <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
+            <div className="flex justify-between items-start gap-2">
+              <div className="min-w-0 flex-1">
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight truncate">
                   {template.company_name || "บริษัท เพรซิเดนท์ฟลาวมิลล์ จำกัด"}
                 </h2>
-                <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-wider uppercase mt-1">
+                <h3 className="text-lg sm:text-2xl font-black text-slate-900 tracking-wider uppercase mt-1 break-words">
                   {template.title}
                 </h3>
               </div>
-              <div className="text-right text-xs text-slate-600 font-mono">
+              <div className="text-right text-xs text-slate-600 font-mono shrink-0">
                 <div>{template.page_info || "หน้า 1"}</div>
                 {template.document_no && <div className="text-slate-500 font-bold">{template.document_no}</div>}
               </div>
             </div>
 
-            <div className="flex flex-wrap justify-between items-center text-xs pt-1 text-slate-700 font-medium">
-              <div className="flex items-center gap-4">
-                <span>POSITION PRODUCTION: ............................................</span>
+            <div className="flex flex-wrap justify-between items-center text-xs pt-1 text-slate-700 font-medium gap-2">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+                <span className="truncate max-w-[200px] sm:max-w-none">POSITION PRODUCTION: ............................................</span>
                 <span>MACHINE: <strong className="text-slate-900">{schedule.machine_name}</strong></span>
               </div>
               <div>
@@ -430,14 +433,14 @@ export default function QCRecordDetail() {
           {/* ─── CASE A: HOURLY MATRIX (Image 2 style) ─────────────────────────── */}
           {/* ════════════════════════════════════════════════════════════════════ */}
           {template.template_type === "hourly_matrix" && (
-            <div className="overflow-x-auto border border-slate-700 rounded-lg pb-1 bg-white">
-              <table className="w-full text-xs border-collapse">
+            <div className="overflow-x-auto overscroll-x-contain border border-slate-700 rounded-lg pb-1 bg-white">
+              <table className="w-full qc-matrix-table-desktop text-xs border-collapse">
                 <thead>
                   {/* Top header row */}
                   <tr className="bg-slate-100 text-slate-900 border-b border-slate-700">
                     <th
                       rowSpan={2}
-                      className="p-2.5 text-center font-bold border-r border-slate-700 min-w-[240px] max-w-[280px] sticky left-0 bg-slate-100 z-10"
+                      className="p-1.5 sm:p-2.5 text-center font-bold border-r border-slate-700 w-[125px] sm:w-[160px] md:w-[260px] min-w-[125px] sm:min-w-[160px] md:min-w-[240px] max-w-[125px] sm:max-w-[160px] md:max-w-[280px] sticky left-0 bg-slate-100 z-20"
                     >
                       รายการตรวจสอบ
                     </th>
@@ -447,7 +450,7 @@ export default function QCRecordDetail() {
                     >
                       เวลาตรวจสอบ
                     </th>
-                    <th rowSpan={2} className="p-2 text-center font-bold min-w-[120px]">
+                    <th rowSpan={2} className="p-2 text-center font-bold min-w-[100px] sm:min-w-[120px]">
                       หมายเหตุ
                     </th>
                   </tr>
@@ -472,14 +475,18 @@ export default function QCRecordDetail() {
                     <tr
                       key={row.row_id}
                       className={cn(
-                        "border-b border-slate-300 transition-colors hover:bg-slate-50/70",
-                        rIdx % 2 === 1 ? "bg-slate-50/30" : "bg-white"
+                        "border-b border-slate-300 transition-colors hover:bg-slate-100",
+                        rIdx % 2 === 1 ? "bg-slate-50" : "bg-white"
                       )}
                     >
                       {/* Row Title */}
-                      <td className="p-2 border-r border-slate-700 font-medium text-slate-800 sticky left-0 bg-inherit z-10 text-[11px] leading-snug">
+                      <td className={cn(
+                        "p-1.5 sm:p-2 border-r border-slate-700 font-medium text-slate-800 sticky left-0 z-10 text-[11px] leading-snug",
+                        "w-[125px] sm:w-[160px] md:w-[260px] min-w-[125px] sm:min-w-[160px] md:min-w-[240px] max-w-[125px] sm:max-w-[160px] md:max-w-[280px]",
+                        rIdx % 2 === 1 ? "bg-slate-50" : "bg-white"
+                      )}>
                         <div className="flex items-center justify-between gap-1">
-                          <span>{row.title}</span>
+                          <span className="line-clamp-2 md:line-clamp-none md:whitespace-nowrap leading-tight">{row.title}</span>
                           {row.unit && (
                             <span className="text-[10px] text-muted-foreground font-mono shrink-0">
                               ({row.unit})
@@ -546,7 +553,7 @@ export default function QCRecordDetail() {
                   {/* ─── Signoff Rows ─── */}
                   {/* Row: Millhand */}
                   <tr className="bg-amber-50/40 border-t-2 border-slate-700 text-[11px]">
-                    <td className="p-2 font-bold text-slate-800 border-r border-slate-700 sticky left-0 bg-amber-50 z-10">
+                    <td className="p-1.5 sm:p-2 font-bold text-slate-800 border-r border-slate-700 sticky left-0 bg-amber-50 z-10 w-[125px] sm:w-[160px] md:w-[260px] min-w-[125px] sm:min-w-[160px] md:min-w-[240px] max-w-[125px] sm:max-w-[160px] md:max-w-[280px]">
                       <div>ผู้ตรวจสอบ</div>
                       <div className="text-[10px] text-muted-foreground font-normal">Millhand</div>
                     </td>
@@ -575,7 +582,7 @@ export default function QCRecordDetail() {
 
                   {/* Row: Miller */}
                   <tr className="bg-blue-50/30 border-t border-slate-300 text-[11px]">
-                    <td className="p-2 font-bold text-slate-800 border-r border-slate-700 sticky left-0 bg-blue-50 z-10">
+                    <td className="p-1.5 sm:p-2 font-bold text-slate-800 border-r border-slate-700 sticky left-0 bg-blue-50 z-10 w-[125px] sm:w-[160px] md:w-[260px] min-w-[125px] sm:min-w-[160px] md:min-w-[240px] max-w-[125px] sm:max-w-[160px] md:max-w-[280px]">
                       <div>ผู้ทวนสอบ</div>
                       <div className="text-[10px] text-muted-foreground font-normal">Miller</div>
                     </td>
@@ -610,14 +617,14 @@ export default function QCRecordDetail() {
           {/* ─── CASE B: SHIFT & MACHINE PARAMETERS (Image 1 style) ────────────── */}
           {/* ════════════════════════════════════════════════════════════════════ */}
           {template.template_type === "shift_parameter_matrix" && (
-            <div className="overflow-x-auto border border-slate-700 rounded-lg pb-1 bg-white">
+            <div className="overflow-x-auto overscroll-x-contain border border-slate-700 rounded-lg pb-1 bg-white">
               <table className="w-full text-xs border-collapse">
                 <thead>
                   <tr className="bg-slate-100 text-slate-900 border-b border-slate-700">
-                    <th rowSpan={2} className="p-2 text-center font-bold border-r border-slate-700 w-16">
+                    <th rowSpan={2} className="p-1 sm:p-2 text-center font-bold border-r border-slate-700 w-12 sm:w-16 min-w-[48px] sm:min-w-[64px] text-[11px] sm:text-xs">
                       SHIFT
                     </th>
-                    <th rowSpan={2} className="p-2.5 text-center font-bold border-r border-slate-700 min-w-[160px]">
+                    <th rowSpan={2} className="p-1.5 sm:p-2.5 text-center font-bold border-r border-slate-700 w-[115px] sm:w-[150px] md:w-auto min-w-[115px] sm:min-w-[150px] md:min-w-[160px] max-w-[115px] sm:max-w-[150px] md:max-w-none text-[11px] sm:text-xs">
                       PARAMETERS
                     </th>
                     <th
@@ -663,18 +670,18 @@ export default function QCRecordDetail() {
                           {isFirstRowOfShift && (
                             <td
                               rowSpan={template.rows.length}
-                              className="p-2 text-center font-black text-sm border-r-2 border-slate-700 bg-slate-100 text-slate-900 select-none align-middle"
+                              className="p-1 sm:p-2 text-center font-black text-xs sm:text-sm border-r-2 border-slate-700 bg-slate-100 text-slate-900 select-none align-middle w-12 sm:w-16 min-w-[48px] sm:min-w-[64px]"
                             >
-                              <div className="font-bold text-base">{shift.name.replace("SHIFT ", "")}</div>
-                              <div className="text-[9px] text-muted-foreground mt-1">{shift.time_range}</div>
+                              <div className="font-bold text-sm sm:text-base">{shift.name.replace("SHIFT ", "")}</div>
+                              <div className="text-[8px] sm:text-[9px] text-muted-foreground mt-0.5 sm:mt-1">{shift.time_range}</div>
                             </td>
                           )}
 
                           {/* Parameter Title */}
-                          <td className="p-2 border-r border-slate-700 font-medium text-slate-800 text-[11px]">
+                          <td className="p-1.5 sm:p-2 border-r border-slate-700 font-medium text-slate-800 text-[10px] sm:text-[11px] w-[115px] sm:w-[150px] md:w-auto min-w-[115px] sm:min-w-[150px] md:min-w-[160px] max-w-[115px] sm:max-w-[150px] md:max-w-none">
                             <div className="flex items-center justify-between gap-1">
-                              <span>{row.title}</span>
-                              {row.unit && <span className="text-[10px] text-muted-foreground font-mono">({row.unit})</span>}
+                              <span className="line-clamp-2 md:line-clamp-none">{row.title}</span>
+                              {row.unit && <span className="text-[9px] sm:text-[10px] text-muted-foreground font-mono shrink-0">({row.unit})</span>}
                             </div>
                           </td>
 

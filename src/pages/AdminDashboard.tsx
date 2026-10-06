@@ -3,6 +3,7 @@ import { useNavigate, useLocation, useSearchParams, useParams } from "react-rout
 import AdminSpareRequests from "./AdminSpareRequests.tsx";
 import TechnicianHistory from "./TechnicianHistory.tsx";
 import TechnicianDetail from "./TechnicianDetail.tsx";
+import Checksheet from "./Checksheet.tsx";
 import {
   BarChart,
   Bar,
@@ -300,27 +301,34 @@ function PipelineSection({
   maxPipelineCount: number;
 }) {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Pipeline */}
       <section>
         <SectionTitle icon={<ChevronRight className="h-4 w-4" />} title="Status Pipeline — การไหลของงาน" />
-        <Card className="p-5">
+        <Card className="p-4 sm:p-5">
           <div className="space-y-3">
             {statusPipeline.map((s) => (
-              <div key={s.key} className="flex items-center gap-3">
-                <div className="w-32 shrink-0 text-xs font-medium text-right text-muted-foreground">{s.label}</div>
-                <div className="flex-1 bg-muted rounded-full h-7 overflow-hidden">
+              <div key={s.key} className="flex items-center gap-2.5 sm:gap-3">
+                <div className="flex items-center gap-1.5 shrink-0 text-xs font-medium text-foreground">
+                  <span
+                    className="h-2 w-2 rounded-full shrink-0"
+                    style={{ backgroundColor: STATUS_BAR_COLOR[s.key] }}
+                  />
+                  <span>{s.label}</span>
+                </div>
+                <div className="flex-1 bg-muted/60 rounded-full h-6 sm:h-7 overflow-hidden">
                   <div
-                    className="h-full rounded-full flex items-center justify-end pr-2 text-xs font-bold text-white transition-all duration-700"
+                    className="h-full rounded-full flex items-center justify-center sm:justify-end pr-0 sm:pr-2 text-xs font-bold text-white transition-all duration-700"
                     style={{
-                      width: `${Math.max((s.count / maxPipelineCount) * 100, s.count > 0 ? 6 : 0)}%`,
+                      width: `${Math.max((s.count / maxPipelineCount) * 100, s.count > 0 ? 7 : 0)}%`,
+                      minWidth: s.count > 0 ? "24px" : "0px",
                       backgroundColor: STATUS_BAR_COLOR[s.key],
                     }}
                   >
                     {s.count > 0 && s.count}
                   </div>
                 </div>
-                <div className={cn("w-7 text-xs font-semibold tabular-nums text-right", s.count === 0 && "text-muted-foreground")}>{s.count}</div>
+                <div className={cn("w-6 sm:w-7 text-xs font-semibold tabular-nums text-right shrink-0", s.count === 0 && "text-muted-foreground")}>{s.count}</div>
               </div>
             ))}
           </div>
@@ -435,7 +443,7 @@ function TeamSection({
                 </div>
               </div>
               <button
-                className="w-full flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-medium text-primary hover:bg-primary/5 transition-colors"
+                className="w-full flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-medium border-slate-200 text-slate-800 hover:bg-slate-50 transition-colors"
                 onClick={() => navigate(`/admin/technician/${tech.id}`, { state: { from: "team" } })}
               >
                 ดูรายละเอียด <ChevronRight className="h-3.5 w-3.5" />
@@ -576,16 +584,22 @@ function SpareSection({
               })}
             </div>
           )}
-          <div className="flex flex-col sm:flex-row gap-2 mt-4">
-            <Button variant="outline" size="sm" className="flex-1 gap-1" onClick={() => navigate('/spare-parts')}>
-              ไปยังระบบจัดการอะไหล่ <ArrowRight className="h-3.5 w-3.5" />
+          <div className="flex flex-col sm:flex-row gap-2.5 mt-4">
+            <Button
+              variant="outline"
+              className="w-full sm:flex-1 h-12 sm:h-10 text-sm font-semibold gap-2 shadow-sm border border-slate-300 bg-white text-slate-900 hover:bg-slate-100 hover:text-black active:scale-[0.98] transition-all"
+              style={{ color: "#0f172a" }}
+              onClick={() => navigate("/admin/spare-parts")}
+            >
+              <Package className="h-4 w-4 shrink-0" style={{ color: "#334155" }} />
+              <span className="font-semibold" style={{ color: "#0f172a" }}>ไปยังระบบจัดการอะไหล่</span>
+              <ArrowRight className="h-4 w-4 shrink-0" style={{ color: "#334155" }} />
             </Button>
             <Button
-              size="sm"
-              className="flex-1 gap-1 bg-amber-500 hover:bg-amber-600 text-white"
+              className="w-full sm:flex-1 h-12 sm:h-10 text-sm font-semibold gap-2 bg-amber-500 hover:bg-amber-600 text-white shadow-sm active:scale-[0.98] transition-all"
               onClick={() => (onNavigateNav ? onNavigateNav("spare-requests") : navigate("/admin/spare-requests"))}
             >
-              <ShieldAlert className="h-3.5 w-3.5" /> ดูคำขออะไหล่จากช่าง
+              <ShieldAlert className="h-4 w-4" /> ดูคำขออะไหล่จากช่าง
             </Button>
           </div>
         </Card>
@@ -659,8 +673,15 @@ function ChecksheetSection({ navigate }: { navigate: (p: string) => void }) {
               </div>
             ))}
           </div>
-          <Button variant="outline" size="sm" className="w-full mt-4 gap-1" onClick={() => navigate('/checksheet')}>
-            ไปยังระบบเช็คชีท <ArrowRight className="h-3.5 w-3.5" />
+          <Button
+            variant="outline"
+            className="w-full mt-4 gap-1.5 h-11 sm:h-10 text-xs sm:text-sm font-semibold border border-slate-300 bg-white text-slate-900 hover:bg-slate-100 hover:text-black active:scale-[0.98] transition-all shadow-sm"
+            style={{ color: "#0f172a" }}
+            onClick={() => navigate('/admin/checksheet')}
+          >
+            <ClipboardList className="h-4 w-4 shrink-0" style={{ color: "#334155" }} />
+            <span className="font-semibold" style={{ color: "#0f172a" }}>ไปยังระบบเช็คชีท</span>
+            <ArrowRight className="h-3.5 w-3.5 shrink-0" style={{ color: "#334155" }} />
           </Button>
         </Card>
       </section>
@@ -691,8 +712,13 @@ export default function AdminDashboard({ defaultTab }: AdminDashboardProps = {})
 
   const isTechDetail = Boolean(params.id) || location.pathname.startsWith("/admin/technician/");
   const techId = params.id || (isTechDetail ? location.pathname.split("/admin/technician/")[1]?.split("/")[0] : undefined);
+  const isChecksheetSystem =
+    location.pathname === "/checksheet" ||
+    location.pathname === "/admin/checksheet" ||
+    searchParams.get("view") === "checksheet";
 
   const getInitialTab = (): NavKey => {
+    if (isChecksheetSystem) return "checksheet";
     if (isTechDetail) {
       if (location.state?.from === "team") return "team";
       return "technician-history";
@@ -711,7 +737,7 @@ export default function AdminDashboard({ defaultTab }: AdminDashboardProps = {})
   useEffect(() => {
     const current = getInitialTab();
     setActiveNav(current);
-  }, [location.pathname, searchParams, defaultTab, isTechDetail]);
+  }, [location.pathname, searchParams, defaultTab, isTechDetail, isChecksheetSystem]);
 
   const handleNavSelect = (key: NavKey) => {
     setActiveNav(key);
@@ -733,6 +759,10 @@ export default function AdminDashboard({ defaultTab }: AdminDashboardProps = {})
     } else {
       navigate("/admin/technician-history");
     }
+  };
+
+  const handleChecksheetBack = () => {
+    navigate("/admin/dashboard?tab=checksheet");
   };
 
   const kpi = useKpi(requests);
@@ -930,46 +960,75 @@ export default function AdminDashboard({ defaultTab }: AdminDashboardProps = {})
         {/* ── Main Content ─────────────────────────────────────────────────── */}
         <main className="flex-1 overflow-y-auto min-w-0">
           {/* Page title bar */}
-          <div className="sticky top-0 z-10 bg-background/90 backdrop-blur border-b px-6 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {isTechDetail ? (
+          <div className="sticky top-0 z-10 bg-background/90 backdrop-blur border-b px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2 sm:gap-3">
+              {isChecksheetSystem ? (
                 <>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={handleTechDetailBack}
-                    className="gap-1.5 -ml-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+                    onClick={handleChecksheetBack}
+                    className="gap-1.5 -ml-1 sm:-ml-2 text-xs font-medium text-muted-foreground hover:text-foreground h-9 px-2.5 sm:px-3"
                   >
                     <ArrowLeft className="h-4 w-4" />
                     ย้อนกลับ
                   </Button>
                   <div className="h-4 w-px bg-border" />
-                  <div className="h-6 w-6 rounded grid place-items-center text-primary">
+                  <div className="h-6 w-6 rounded grid place-items-center text-primary shrink-0">
+                    <ClipboardList className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="font-semibold text-sm leading-none truncate">
+                      ระบบเช็คชีท
+                    </h2>
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                      จัดการ Template & บันทึกการตรวจสอบ
+                    </p>
+                  </div>
+                </>
+              ) : isTechDetail ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleTechDetailBack}
+                    className="gap-1.5 -ml-1 sm:-ml-2 text-xs font-medium text-muted-foreground hover:text-foreground h-9 px-2.5 sm:px-3"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    ย้อนกลับ
+                  </Button>
+                  <div className="h-4 w-px bg-border" />
+                  <div className="h-6 w-6 rounded grid place-items-center text-primary shrink-0">
                     <Users className="h-5 w-5" />
                   </div>
-                  <div>
-                    <h2 className="font-semibold text-sm leading-none">
+                  <div className="min-w-0">
+                    <h2 className="font-semibold text-sm leading-none truncate">
                       {techId && TECHNICIAN_MAP[techId]?.name ? `รายละเอียดช่าง: ${TECHNICIAN_MAP[techId].name}` : "รายละเอียดช่าง"}
                     </h2>
-                    <p className="text-xs text-muted-foreground mt-0.5">
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
                       {techId && TECHNICIAN_MAP[techId]?.department ? `${TECHNICIAN_MAP[techId].department} · ${techId}` : "ประวัติและผลงานรายบุคคล"}
                     </p>
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="h-6 w-6 rounded grid place-items-center text-primary">{activeNavItem.icon}</div>
-                  <div>
-                    <h2 className="font-semibold text-sm leading-none">{activeNavItem.label}</h2>
-                    <p className="text-xs text-muted-foreground mt-0.5">{activeNavItem.sublabel}</p>
+                  <div className="h-6 w-6 rounded grid place-items-center text-primary shrink-0">{activeNavItem.icon}</div>
+                  <div className="min-w-0">
+                    <h2 className="font-semibold text-sm leading-none truncate">{activeNavItem.label}</h2>
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate">{activeNavItem.sublabel}</p>
                   </div>
                 </>
               )}
             </div>
           </div>
 
-          <div className="p-6 animate-slide-up">
-            {isTechDetail && techId ? (
+          <div className="p-4 sm:p-6 animate-slide-up">
+            {isChecksheetSystem ? (
+              <Checksheet
+                embedded
+                onBack={handleChecksheetBack}
+              />
+            ) : isTechDetail && techId ? (
               <TechnicianDetail
                 embedded
                 id={techId}

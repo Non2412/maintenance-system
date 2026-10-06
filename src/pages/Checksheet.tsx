@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   ClipboardList, Plus, Pencil, Trash2, Play, History,
   Check, X, Flag, LogOut, LayoutDashboard, Save,
-  CheckCircle2, GripVertical, ChevronDown,
+  CheckCircle2, GripVertical, ChevronDown, ArrowLeft,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -453,13 +453,28 @@ function TemplateEditor({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-export default function Checksheet() {
+interface ChecksheetProps {
+  embedded?: boolean;
+  onBack?: () => void;
+}
+
+export default function Checksheet({ embedded = false, onBack }: ChecksheetProps = {}) {
   const navigate = useNavigate();
   const [templates, setTemplates] = useState<ChecksheetTemplate[]>(MOCK_CHECKSHEET_TEMPLATES);
   const [records, setRecords] = useState<ChecksheetRecord[]>(MOCK_CHECKSHEET_RECORDS);
   const [fillTarget, setFillTarget] = useState<ChecksheetTemplate | null>(null);
   const [editTarget, setEditTarget] = useState<ChecksheetTemplate | null | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<'templates' | 'records'>('templates');
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/admin/dashboard?tab=checksheet');
+    }
+  };
 
   const kpi = useMemo(() => {
     const total = templates.filter((t) => t.active).length;
@@ -485,43 +500,8 @@ export default function Checksheet() {
   const handleDeleteTemplate = (id: string) =>
     setTemplates((p) => p.map((t) => t.template_id === id ? { ...t, active: false } : t));
 
-  return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="sticky top-0 z-30 shadow-md"
-        style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)', color: 'white' }}>
-        <div className="px-4 py-3 flex items-center gap-3">
-          <div className="h-9 w-9 rounded-md grid place-items-center shrink-0" style={{ background: 'rgba(255,255,255,0.15)' }}>
-            <ClipboardList className="h-5 w-5 text-white" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-xs uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.6)' }}>Checksheet System</div>
-            <h1 className="font-bold truncate">ระบบเช็คชีท</h1>
-          </div>
-          <div className="hidden md:flex items-center gap-2">
-            {kpi.flagged > 0 && (
-              <span className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
-                style={{ background: 'rgba(239,68,68,0.3)', border: '1px solid rgba(239,68,68,0.4)' }}>
-                <Flag className="h-3 w-3" /> พบปัญหา {kpi.flagged}
-              </span>
-            )}
-            <span className="rounded-full px-3 py-1 text-xs font-medium" style={{ background: 'rgba(255,255,255,0.1)' }}>
-              วันนี้ {kpi.todayRecs} รายการ
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10"
-              onClick={() => navigate('/admin/dashboard')} aria-label="Dashboard">
-              <LayoutDashboard className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10"
-              onClick={() => navigate('/')} aria-label="ออกจากระบบ">
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1 p-4 md:p-6 space-y-6 max-w-7xl mx-auto w-full">
+  const bodyContent = (
+    <div className="space-y-6">
         {/* KPI */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
@@ -651,14 +631,70 @@ export default function Checksheet() {
             </div>
           </Card>
         )}
-      </main>
-
       {fillTarget && (
         <FillView template={fillTarget} onClose={() => setFillTarget(null)} onSubmit={handleSubmitRecord} />
       )}
       {editTarget !== undefined && (
         <TemplateEditor template={editTarget} onClose={() => setEditTarget(undefined)} onSave={handleSaveTemplate} />
       )}
+    </div>
+  );
+
+  if (embedded) {
+    return bodyContent;
+  }
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      <header className="sticky top-0 z-30 shadow-md"
+        style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)', color: 'white' }}>
+        <div className="px-4 py-3 flex items-center gap-2 sm:gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white hover:bg-white/10 shrink-0 gap-1.5 h-9 px-2.5 sm:px-3 text-xs sm:text-sm font-medium"
+            onClick={handleBack}
+            aria-label="ย้อนกลับ"
+            title="ย้อนกลับ"
+          >
+            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span>ย้อนกลับ</span>
+          </Button>
+          <div className="h-4 w-px bg-white/20" />
+          <div className="h-9 w-9 rounded-md grid place-items-center shrink-0" style={{ background: 'rgba(255,255,255,0.15)' }}>
+            <ClipboardList className="h-5 w-5 text-white" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-xs uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.6)' }}>Checksheet System</div>
+            <h1 className="font-bold truncate text-sm sm:text-base">ระบบเช็คชีท</h1>
+          </div>
+          <div className="hidden md:flex items-center gap-2">
+            {kpi.flagged > 0 && (
+              <span className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
+                style={{ background: 'rgba(239,68,68,0.3)', border: '1px solid rgba(239,68,68,0.4)' }}>
+                <Flag className="h-3 w-3" /> พบปัญหา {kpi.flagged}
+              </span>
+            )}
+            <span className="rounded-full px-3 py-1 text-xs font-medium" style={{ background: 'rgba(255,255,255,0.1)' }}>
+              วันนี้ {kpi.todayRecs} รายการ
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10"
+              onClick={() => navigate('/admin/dashboard')} aria-label="Dashboard">
+              <LayoutDashboard className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10"
+              onClick={() => navigate('/')} aria-label="ออกจากระบบ">
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1 p-4 md:p-6 space-y-6 max-w-7xl mx-auto w-full">
+        {bodyContent}
+      </main>
     </div>
   );
 }

@@ -201,26 +201,26 @@ function CreateMatrixTemplateModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-3 sm:p-4">
       <div className="bg-card rounded-2xl shadow-2xl w-full max-w-2xl border max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in">
-        <div className="p-5 border-b bg-muted/30 flex justify-between items-center">
+        <div className="p-4 sm:p-5 border-b bg-muted/30 flex justify-between items-center">
           <div>
             <span className="text-[10px] uppercase font-bold tracking-wider text-primary">QC Form Builder</span>
-            <h3 className="font-bold text-base text-foreground">สร้างแม่แบบ QC ใหม่ (Matrix Template)</h3>
+            <h3 className="font-bold text-sm sm:text-base text-foreground">สร้างแม่แบบ QC ใหม่ (Matrix Template)</h3>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose}><XCircle className="h-5 w-5" /></Button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-5 space-y-5 text-xs">
-          <div className="rounded-xl bg-primary/5 border border-primary/20 p-3.5 space-y-2">
+        <div className="flex-1 overflow-y-auto p-3.5 sm:p-5 space-y-4 sm:space-y-5 text-xs">
+          <div className="rounded-xl bg-primary/5 border border-primary/20 p-3 sm:p-3.5 space-y-2">
             <div className="flex items-center gap-1.5 font-bold text-primary text-xs">
               <Sparkles className="h-4 w-4" /> เลือกแม่แบบมาตรฐานโรงงานสำเร็จรูป (1-Click Presets):
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-2">
               <Button
                 size="sm"
                 variant="outline"
-                className="text-xs bg-white hover:bg-primary/10 border-primary/30 text-primary gap-1"
+                className="text-xs justify-start h-auto py-1.5 px-2.5 bg-white hover:bg-primary/10 border-primary/30 text-primary gap-1 text-left whitespace-normal"
                 onClick={() => handleLoadPreset("hourly")}
               >
                 ⏱️ ตารางตรวจเครื่องคัดแยก & สั่น 24 ชม. (ตามรูป 2)
@@ -228,7 +228,7 @@ function CreateMatrixTemplateModal({
               <Button
                 size="sm"
                 variant="outline"
-                className="text-xs bg-white hover:bg-primary/10 border-primary/30 text-primary gap-1"
+                className="text-xs justify-start h-auto py-1.5 px-2.5 bg-white hover:bg-primary/10 border-primary/30 text-primary gap-1 text-left whitespace-normal"
                 onClick={() => handleLoadPreset("rollermill")}
               >
                 🏭 ROLLERMILL PARAMETERS — Line C (ตามรูป 1)
@@ -237,7 +237,7 @@ function CreateMatrixTemplateModal({
           </div>
 
           <Field label="ประเภทรูปแบบตาราง:">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
               <button
                 type="button"
                 onClick={() => setTemplateType("hourly_matrix")}
@@ -306,56 +306,81 @@ function CreateMatrixTemplateModal({
               <label className="text-xs font-bold text-foreground">
                 รายการตรวจสอบ / พารามิเตอร์ ({rows.length} รายการ):
               </label>
-              <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={handleAddRow}>
-                <Plus className="h-3 w-3" /> เพิ่มรายการ
+              <Button size="sm" variant="outline" className="text-xs h-8 sm:h-7 gap-1" onClick={handleAddRow}>
+                <Plus className="h-3.5 w-3.5" /> เพิ่มรายการ
               </Button>
             </div>
 
-            <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+            <div className="space-y-2.5 max-h-64 sm:max-h-56 overflow-y-auto pr-1">
               {rows.map((row, idx) => (
-                <div key={row.row_id} className="flex items-center gap-2 p-2 rounded-lg bg-muted/40 border">
-                  <span className="font-mono text-muted-foreground w-5 text-center shrink-0">{idx + 1}</span>
-                  <Input
-                    className="flex-1 h-8 text-xs"
-                    value={row.title}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setRows((prev) => prev.map((r, i) => (i === idx ? { ...r, title: v } : r)));
-                    }}
-                  />
-                  <select
-                    className="h-8 rounded-md border bg-background px-2 text-xs"
-                    value={row.input_type}
-                    onChange={(e) => {
-                      const v = e.target.value as "status_symbol" | "number" | "text";
-                      setRows((prev) => prev.map((r, i) => (i === idx ? { ...r, input_type: v } : r)));
-                    }}
-                  >
-                    <option value="status_symbol">สัญลักษณ์ (✓, O, ✗, -)</option>
-                    <option value="number">ตัวเลข (วัดค่า)</option>
-                    <option value="text">ข้อความ</option>
-                  </select>
-
-                  {row.input_type === "number" && (
+                <div
+                  key={row.row_id}
+                  className="p-2.5 sm:p-2 rounded-lg bg-muted/40 border border-border/80 hover:border-border transition-colors space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-2"
+                >
+                  {/* แถวที่ 1 บนมือถือ (หรือส่วนซ้ายบนจอใหญ่): ลำดับ + ช่องพิมพ์ชื่อรายการ + ปุ่มลบบนมือถือ */}
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className="h-6 w-6 rounded bg-muted/80 text-muted-foreground font-mono text-xs font-bold flex items-center justify-center shrink-0">
+                      {idx + 1}
+                    </span>
                     <Input
-                      placeholder="หน่วย เช่น bar"
-                      className="w-20 h-8 text-xs font-mono"
-                      value={row.unit || ""}
+                      placeholder="ชื่อรายการตรวจสอบ / พารามิเตอร์"
+                      className="flex-1 h-9 sm:h-8 text-xs font-medium"
+                      value={row.title}
                       onChange={(e) => {
                         const v = e.target.value;
-                        setRows((prev) => prev.map((r, i) => (i === idx ? { ...r, unit: v } : r)));
+                        setRows((prev) => prev.map((r, i) => (i === idx ? { ...r, title: v } : r)));
                       }}
                     />
-                  )}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 sm:hidden text-muted-foreground hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 shrink-0"
+                      onClick={() => handleRemoveRow(idx)}
+                      title="ลบรายการ"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
 
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-rose-600"
-                    onClick={() => handleRemoveRow(idx)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                  {/* แถวที่ 2 บนมือถือ (หรือส่วนขวาบนจอใหญ่): ชนิดข้อมูล + หน่วย (ถ้าเป็นตัวเลข) + ปุ่มลบบนจอใหญ่ */}
+                  <div className="flex items-center gap-2 pl-8 sm:pl-0 shrink-0">
+                    <select
+                      className="flex-1 sm:w-44 h-9 sm:h-8 rounded-md border bg-background px-2 text-xs font-medium focus:ring-1 focus:ring-ring"
+                      value={row.input_type}
+                      onChange={(e) => {
+                        const v = e.target.value as "status_symbol" | "number" | "text";
+                        setRows((prev) => prev.map((r, i) => (i === idx ? { ...r, input_type: v } : r)));
+                      }}
+                    >
+                      <option value="status_symbol">สัญลักษณ์ (✓, O, ✗, -)</option>
+                      <option value="number">ตัวเลข (วัดค่า)</option>
+                      <option value="text">ข้อความ</option>
+                    </select>
+
+                    {row.input_type === "number" && (
+                      <Input
+                        placeholder="หน่วย เช่น bar"
+                        className="w-24 sm:w-20 h-9 sm:h-8 text-xs font-mono"
+                        value={row.unit || ""}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setRows((prev) => prev.map((r, i) => (i === idx ? { ...r, unit: v } : r)));
+                        }}
+                      />
+                    )}
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="hidden sm:inline-flex h-8 w-8 text-muted-foreground hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 shrink-0"
+                      onClick={() => handleRemoveRow(idx)}
+                      title="ลบรายการ"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -851,7 +876,14 @@ export default function QCDashboard() {
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium">{item.label}</p>
                       {item.badge !== undefined && item.badge > 0 && (
-                        <span className="bg-primary/20 text-sidebar-primary-foreground border border-sidebar-primary/40 rounded-full text-[10px] font-bold px-1.5 py-0.2">
+                        <span
+                          className={cn(
+                            "min-w-5 h-5 px-1.5 rounded-full text-[11px] font-bold flex items-center justify-center shadow-sm transition-all shrink-0",
+                            isActive
+                              ? "bg-red-500 text-white ring-2 ring-white"
+                              : "bg-red-500 text-white ring-1 ring-white/20"
+                          )}
+                        >
                           {item.badge}
                         </span>
                       )}

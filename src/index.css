@@ -123,6 +123,12 @@
     letter-spacing: -0.01em;
   }
 
+  @media (min-width: 768px) {
+    .qc-matrix-table-desktop {
+      min-width: 1500px !important;
+    }
+  }
+
   /* Date and time input picker indicator alignment */
   input[type="date"],
   input[type="time"],
