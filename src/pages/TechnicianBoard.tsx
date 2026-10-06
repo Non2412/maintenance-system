@@ -215,7 +215,7 @@ export default function TechnicianBoard() {
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       <header className="sticky top-0 z-20 bg-gradient-primary text-primary-foreground shadow-md">
-        <div className="container py-3 flex items-center gap-3">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-3 flex items-center gap-3">
           <div className="h-9 w-9 rounded-md bg-secondary grid place-items-center shrink-0">
             <Wrench className="h-5 w-5 text-secondary-foreground" />
           </div>

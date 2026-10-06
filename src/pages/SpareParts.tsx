@@ -323,21 +323,20 @@ function CreateSparePartModal({ existingParts, onClose, onSave }: CreateSparePar
       <div className="relative z-10 w-full max-w-2xl rounded-2xl bg-card border shadow-2xl overflow-hidden flex flex-col my-8 max-h-[90vh]">
         {/* Header */}
         <div
-          className="px-6 py-4 flex items-center justify-between shrink-0"
-          style={{ background: "linear-gradient(135deg, #6d28d9 0%, #4338ca 100%)", color: "white" }}
+          className="px-6 py-4 flex items-center justify-between shrink-0 bg-gradient-primary text-primary-foreground"
         >
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-white/20 grid place-items-center shadow-inner">
-              <Plus className="h-5 w-5 text-white" />
+            <div className="h-9 w-9 rounded-xl bg-secondary text-secondary-foreground grid place-items-center shadow-sm">
+              <Plus className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs text-white/75 font-medium tracking-wide uppercase">New Spare Part</p>
-              <h2 className="font-bold text-white text-base">ลงทะเบียน / เพิ่มรายการอะไหล่ใหม่</h2>
+              <p className="text-xs text-primary-foreground/75 font-medium tracking-wide uppercase">New Spare Part</p>
+              <h2 className="font-bold text-primary-foreground text-base">ลงทะเบียน / เพิ่มรายการอะไหล่ใหม่</h2>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/80 hover:text-white transition-colors"
+            className="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-primary-foreground/80 hover:text-primary-foreground transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -578,7 +577,7 @@ function CreateSparePartModal({ existingParts, onClose, onSave }: CreateSparePar
                     className={cn(
                       "rounded-lg border px-2.5 py-1 text-xs font-mono transition-all flex items-center gap-1",
                       isSelected
-                        ? "bg-violet-600 text-white border-violet-600 shadow-sm"
+                        ? "bg-primary text-primary-foreground border-primary shadow-sm"
                         : "bg-background hover:bg-muted text-muted-foreground"
                     )}
                   >
@@ -613,7 +612,7 @@ function CreateSparePartModal({ existingParts, onClose, onSave }: CreateSparePar
                 {selectedAssets.map((asset) => (
                   <span
                     key={asset}
-                    className="inline-flex items-center gap-1 rounded-full bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300 px-2.5 py-0.5 text-xs font-mono"
+                    className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground px-2.5 py-0.5 text-xs font-mono"
                   >
                     {asset}
                     <button
@@ -636,7 +635,7 @@ function CreateSparePartModal({ existingParts, onClose, onSave }: CreateSparePar
             </Button>
             <Button
               type="submit"
-              className="flex-1 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-medium"
+              className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
               disabled={isDuplicateId || !name.trim()}
             >
               <Plus className="h-4 w-4 mr-1.5" /> บันทึกรายการอะไหล่
@@ -757,7 +756,7 @@ export default function SpareParts({ embedded = false, onBack }: SparePartsProps
         {/* KPI Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
           {[
-            { label: "รายการทั้งหมด", value: kpi.total, icon: <Package className="h-4 w-4" />, accent: "#6366f1", border: "border-l-indigo-500" },
+            { label: "รายการทั้งหมด", value: kpi.total, icon: <Package className="h-4 w-4 text-primary" />, accent: "hsl(var(--primary))", border: "border-l-primary" },
             { label: "ต้องสั่งซื้อ", value: kpi.needOrder, icon: <ShieldAlert className="h-4 w-4" />, accent: "#f59e0b", border: "border-l-amber-500" },
             { label: "หมดสต็อก", value: kpi.out, icon: <AlertTriangle className="h-4 w-4 text-red-500" />, accent: "#ef4444", border: "border-l-red-500" },
             { label: "ใกล้หมด", value: kpi.low, icon: <TrendingDown className="h-4 w-4 text-amber-500" />, accent: "#f59e0b", border: "border-l-amber-400" },
@@ -804,7 +803,7 @@ export default function SpareParts({ embedded = false, onBack }: SparePartsProps
             </Button>
             <Button
               onClick={() => setIsCreateModalOpen(true)}
-              className="flex-1 sm:flex-initial h-11 sm:h-9 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-sm flex items-center justify-center gap-2 text-xs sm:text-sm font-medium active:scale-[0.98] transition-all"
+              className="flex-1 sm:flex-initial h-11 sm:h-9 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm flex items-center justify-center gap-2 text-xs sm:text-sm font-medium active:scale-[0.98] transition-all"
             >
               <Plus className="h-4 w-4" />
               <span>สร้างรายการอะไหล่ใหม่</span>
@@ -990,12 +989,12 @@ export default function SpareParts({ embedded = false, onBack }: SparePartsProps
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="sticky top-0 z-30 shadow-md" style={{ background: "linear-gradient(135deg, #6d28d9 0%, #4338ca 100%)", color: "white" }}>
+      <header className="sticky top-0 z-30 bg-gradient-primary text-primary-foreground shadow-md">
         <div className="px-4 py-3 flex items-center gap-2 sm:gap-3">
           <Button
             variant="ghost"
             size="sm"
-            className="text-white hover:bg-white/10 shrink-0 gap-1.5 h-9 px-2.5 sm:px-3 text-xs sm:text-sm font-medium"
+            className="text-primary-foreground hover:bg-white/10 shrink-0 gap-1.5 h-9 px-2.5 sm:px-3 text-xs sm:text-sm font-medium"
             onClick={handleBack}
             aria-label="ย้อนกลับ"
             title="ย้อนกลับ"
@@ -1004,31 +1003,31 @@ export default function SpareParts({ embedded = false, onBack }: SparePartsProps
             <span>ย้อนกลับ</span>
           </Button>
           <div className="h-4 w-px bg-white/20" />
-          <div className="h-9 w-9 rounded-md grid place-items-center shrink-0" style={{ background: "rgba(255,255,255,0.2)" }}>
-            <Package className="h-5 w-5 text-white" />
+          <div className="h-9 w-9 rounded-md bg-secondary text-secondary-foreground grid place-items-center shrink-0 shadow-sm">
+            <Package className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-xs uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.7)" }}>Spare Parts Management</div>
+            <div className="text-xs uppercase tracking-wider text-primary-foreground/70 font-semibold">Spare Parts Management</div>
             <h1 className="font-bold truncate text-sm sm:text-base">ระบบบริหารจัดการอะไหล่</h1>
           </div>
           <div className="hidden md:flex items-center gap-2">
             {kpi.out > 0 && (
-              <span className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold" style={{ background: "rgba(239,68,68,0.3)", border: "1px solid rgba(239,68,68,0.4)" }}>
+              <span className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold bg-red-500/20 border border-red-400/40 text-red-200">
                 <span className="h-2 w-2 rounded-full bg-red-400 animate-pulse" />
                 หมดสต็อก {kpi.out}
               </span>
             )}
             {kpi.low > 0 && (
-              <span className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold" style={{ background: "rgba(251,191,36,0.2)", border: "1px solid rgba(251,191,36,0.4)" }}>
+              <span className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold bg-amber-500/20 border border-amber-400/40 text-amber-200">
                 ⚠ ใกล้หมด {kpi.low}
               </span>
             )}
           </div>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10" onClick={() => navigate("/admin/dashboard")} aria-label="Dashboard">
+            <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10" onClick={() => navigate("/admin/dashboard")} aria-label="Dashboard">
               <LayoutDashboard className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10" onClick={() => navigate("/")} aria-label="ออกจากระบบ">
+            <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10" onClick={() => navigate("/")} aria-label="ออกจากระบบ">
               <LogOut className="h-4 w-4" />
             </Button>
           </div>

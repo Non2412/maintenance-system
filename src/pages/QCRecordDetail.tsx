@@ -837,8 +837,9 @@ export default function QCRecordDetail() {
       {/* ─── MODAL 1: EDIT CELL VALUE ────────────────────────────────────────── */}
       {/* ══════════════════════════════════════════════════════════════════════ */}
       {editingCell && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 print:hidden">
-          <div className="bg-card rounded-2xl shadow-2xl w-full max-w-md border overflow-hidden animate-in fade-in zoom-in-95">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 print:hidden" role="dialog" aria-modal="true">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200" onClick={() => setEditingCell(null)} aria-hidden="true" />
+          <div className="relative z-10 bg-card rounded-2xl shadow-2xl w-full max-w-md border overflow-hidden animate-in fade-in zoom-in-95">
             <div className="p-4 border-b bg-muted/40 flex justify-between items-center">
               <div>
                 <p className="text-xs font-mono text-primary uppercase">{editingCell.col.label}</p>
@@ -959,8 +960,9 @@ export default function QCRecordDetail() {
       {/* ─── MODAL 2: QUICK SLOT INSPECTION (All Normal shortcut) ───────────── */}
       {/* ══════════════════════════════════════════════════════════════════════ */}
       {quickSlotModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 print:hidden">
-          <div className="bg-card rounded-2xl shadow-2xl w-full max-w-sm border overflow-hidden animate-in fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 print:hidden" role="dialog" aria-modal="true">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200" onClick={() => setQuickSlotModal(null)} aria-hidden="true" />
+          <div className="relative z-10 bg-card rounded-2xl shadow-2xl w-full max-w-sm border overflow-hidden animate-in fade-in">
             <div className="p-4 border-b bg-muted/30">
               <h3 className="font-bold text-sm">ลงเวลาตรวจรอบเวลา {quickSlotModal.colLabel}</h3>
               <p className="text-xs text-muted-foreground">บันทึกผลการตรวจและลายมือชื่อด่วน</p>
@@ -1013,8 +1015,9 @@ export default function QCRecordDetail() {
       {/* ─── MODAL 3: SUPERVISOR APPROVAL ────────────────────────────────────── */}
       {/* ══════════════════════════════════════════════════════════════════════ */}
       {showSupervisorModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 print:hidden">
-          <div className="bg-card rounded-2xl shadow-2xl w-full max-w-md border overflow-hidden animate-in fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 print:hidden" role="dialog" aria-modal="true">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200" onClick={() => setShowSupervisorModal(false)} aria-hidden="true" />
+          <div className="relative z-10 bg-card rounded-2xl shadow-2xl w-full max-w-md border overflow-hidden animate-in fade-in">
             <div className="p-4 border-b bg-muted/30">
               <h3 className="font-bold text-sm">ลงนามอนุมัติ (หัวหน้าแผนก)</h3>
               <p className="text-xs text-muted-foreground">ตรวจรับรองความถูกต้องของเอกสารตรวจ QC</p>

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ClipboardCheck, LogOut, Plus, Calendar, Clock, CheckCircle2,
@@ -201,8 +201,13 @@ function CreateMatrixTemplateModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-3 sm:p-4">
-      <div className="bg-card rounded-2xl shadow-2xl w-full max-w-2xl border max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4" role="dialog" aria-modal="true">
+      <div
+        className="fixed inset-0 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div className="relative z-10 bg-card rounded-2xl shadow-2xl w-full max-w-2xl border max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in">
         <div className="p-4 sm:p-5 border-b bg-muted/30 flex justify-between items-center">
           <div>
             <span className="text-[10px] uppercase font-bold tracking-wider text-primary">QC Form Builder</span>
@@ -479,11 +484,19 @@ function NewScheduleModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-      <div className="bg-card rounded-2xl shadow-2xl w-full max-w-lg border max-h-[90vh] overflow-y-auto animate-in fade-in">
-        <div className="p-5 border-b sticky top-0 bg-card z-10">
-          <h3 className="font-bold text-base">สร้างกำหนดการตรวจ QC ใหม่</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">เลือกแม่แบบตารางตรวจและกำหนดเครื่องจักร</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+      <div
+        className="fixed inset-0 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div className="relative z-10 bg-card rounded-2xl shadow-2xl w-full max-w-lg border max-h-[90vh] overflow-y-auto animate-in fade-in">
+        <div className="p-5 border-b sticky top-0 bg-card z-10 flex items-start justify-between">
+          <div>
+            <h3 className="font-bold text-base">สร้างกำหนดการตรวจ QC ใหม่</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">เลือกแม่แบบตารางตรวจและกำหนดเครื่องจักร</p>
+          </div>
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label="ปิด"><X className="h-5 w-5" /></Button>
         </div>
         <div className="p-5 space-y-4 text-xs">
           <Field label="รูปแบบแบบฟอร์มที่ใช้ตรวจ:">
@@ -606,15 +619,31 @@ function ScheduleDetailDrawer({
 }) {
   const s = STATUS_CONFIG[item.status];
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-xs">
-      <div className="bg-card w-full max-w-md h-full shadow-2xl flex flex-col border-l animate-in slide-in-from-right duration-200">
+    <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true">
+      {/* Backdrop: กดพื้นที่ด้านซ้ายเพื่อพับปิดแถบด้านขวา */}
+      <div
+        className="fixed inset-0 bg-black/40 backdrop-blur-xs animate-in fade-in duration-200 cursor-pointer"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div className="relative z-10 bg-card w-full sm:max-w-md h-full shadow-2xl flex flex-col border-l animate-in slide-in-from-right duration-300 ease-out">
         <div className="p-5 border-b flex items-start justify-between">
           <div>
             <span className="font-mono text-xs text-primary font-bold">{item.schedule_id}</span>
             <h3 className="font-bold text-base mt-0.5">{item.title}</h3>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}><XCircle className="h-5 w-5" /></Button>
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label="ปิดแถบรายละเอียด"><XCircle className="h-5 w-5" /></Button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-4 text-xs">

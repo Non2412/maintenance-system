@@ -137,24 +137,67 @@ interface KpiCardProps {
   icon: React.ReactNode;
   label: string;
   value: string | number;
+  unit?: string;
   sub?: string;
   accentClass?: string;
+  iconBgClass?: string;
   pulse?: boolean;
 }
-function KpiCard({ icon, label, value, sub, accentClass, pulse }: KpiCardProps) {
+function KpiCard({ icon, label, value, unit, sub, accentClass, iconBgClass, pulse }: KpiCardProps) {
+  let displayValue = value;
+  let displayUnit = unit;
+  if (!displayUnit && typeof value === "string") {
+    const parts = value.trim().split(/\s+/);
+    if (parts.length === 2 && !isNaN(Number(parts[0]))) {
+      displayValue = parts[0];
+      displayUnit = parts[1];
+    }
+  }
+
+  const valStr = String(displayValue);
+  const isCompactValue = valStr.length > 5;
+
   return (
-    <Card className={cn("relative overflow-hidden p-5 border-l-4 bg-card transition-shadow hover:shadow-md", accentClass ?? "border-l-primary")}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-1 min-w-0">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
-          <p className="text-3xl font-bold tabular-nums leading-none">{value}</p>
-          {sub && <p className="text-xs text-muted-foreground truncate">{sub}</p>}
+    <Card
+      className={cn(
+        "relative overflow-hidden p-3.5 sm:p-5 border-l-4 bg-card transition-all duration-200 hover:shadow-md flex flex-col justify-between min-w-0",
+        accentClass ?? "border-l-primary"
+      )}
+    >
+      <div>
+        <div className="flex items-center justify-between gap-1.5 mb-2 sm:mb-2.5">
+          <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate" title={label}>{label}</p>
+          <div className={cn("h-8 w-8 sm:h-9 sm:w-9 rounded-lg grid place-items-center shrink-0 transition-colors shadow-xs", iconBgClass ?? "bg-muted text-muted-foreground")}>
+            {icon}
+          </div>
         </div>
-        <div className="h-11 w-11 rounded-xl grid place-items-center shrink-0 bg-muted text-muted-foreground">
-          {icon}
+
+        <div className="flex items-baseline gap-1.5 flex-nowrap overflow-hidden">
+          <span
+            className={cn(
+              "font-bold tabular-nums tracking-tight leading-none text-foreground whitespace-nowrap",
+              isCompactValue
+                ? "text-[28px] sm:text-3xl xl:text-[22px] 2xl:text-[28px]"
+                : "text-3xl sm:text-4xl xl:text-2xl 2xl:text-3xl"
+            )}
+            title={valStr}
+          >
+            {displayValue}
+          </span>
+          {displayUnit && (
+            <span className="text-xs sm:text-sm font-semibold text-muted-foreground shrink-0 whitespace-nowrap">
+              {displayUnit}
+            </span>
+          )}
         </div>
       </div>
-      {pulse && <span className="absolute top-3 right-3 h-2.5 w-2.5 rounded-full bg-priority-critical priority-pulse" />}
+
+      {sub && (
+        <div className="mt-2.5 pt-1.5 border-t border-border/40">
+          <p className="text-[11px] text-muted-foreground truncate" title={sub}>{sub}</p>
+        </div>
+      )}
+      {pulse && <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-priority-critical priority-pulse" />}
     </Card>
   );
 }
@@ -240,13 +283,13 @@ function OverviewSection({
       {/* KPI Row */}
       <section>
         <SectionTitle icon={<BarChart3 className="h-4 w-4" />} title="ตัวชี้วัดหลัก (KPIs)" />
-        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 xl:grid-cols-6">
-          <KpiCard icon={<BarChart3 className="h-5 w-5" />} label="งานทั้งหมด" value={kpi.total} sub="ทุกสถานะรวมกัน" accentClass="border-l-primary" />
-          <KpiCard icon={<AlertTriangle className="h-5 w-5 text-red-500" />} label="งานวิกฤติ" value={kpi.critical} sub="ต้องดำเนินการทันที" accentClass="border-l-red-500" pulse={kpi.critical > 0} />
-          <KpiCard icon={<Clock className="h-5 w-5 text-orange-500" />} label="ค้างเกิน 24 ชม." value={kpi.overdue} sub="ยังไม่เสร็จ" accentClass="border-l-orange-500" />
-          <KpiCard icon={<CheckCircle2 className="h-5 w-5 text-emerald-600" />} label="เสร็จสิ้นแล้ว" value={kpi.complete} sub={`${kpi.completionRate}% ของงาน`} accentClass="border-l-emerald-500" />
-          <KpiCard icon={<Package className="h-5 w-5 text-violet-500" />} label="รออะไหล่" value={kpi.waiting} sub="รอจัดซื้อ/จัดส่ง" accentClass="border-l-violet-500" />
-          <KpiCard icon={<TrendingUp className="h-5 w-5 text-cyan-600" />} label="MTTR (จำลอง)" value={`${kpi.mockMttr} ชม.`} sub="เฉลี่ยเวลาซ่อม" accentClass="border-l-cyan-500" />
+        <div className="grid gap-3.5 sm:gap-4 grid-cols-2 sm:grid-cols-3 xl:grid-cols-6">
+          <KpiCard icon={<BarChart3 className="h-4.5 w-4.5 text-primary" />} iconBgClass="bg-primary/10 text-primary" label="งานทั้งหมด" value={kpi.total} sub="ทุกสถานะรวมกัน" accentClass="border-l-primary" />
+          <KpiCard icon={<AlertTriangle className="h-4.5 w-4.5 text-red-600" />} iconBgClass="bg-red-100/80 text-red-700" label="งานวิกฤติ" value={kpi.critical} sub="ต้องดำเนินการทันที" accentClass="border-l-red-500" pulse={kpi.critical > 0} />
+          <KpiCard icon={<Clock className="h-4.5 w-4.5 text-orange-600" />} iconBgClass="bg-orange-100/80 text-orange-700" label="ค้างเกิน 24 ชม." value={kpi.overdue} sub="ยังไม่เสร็จ" accentClass="border-l-orange-500" />
+          <KpiCard icon={<CheckCircle2 className="h-4.5 w-4.5 text-emerald-600" />} iconBgClass="bg-emerald-100/80 text-emerald-700" label="เสร็จสิ้นแล้ว" value={kpi.complete} sub={`${kpi.completionRate}% ของงาน`} accentClass="border-l-emerald-500" />
+          <KpiCard icon={<Package className="h-4.5 w-4.5 text-violet-600" />} iconBgClass="bg-violet-100/80 text-violet-700" label="รออะไหล่" value={kpi.waiting} sub="รอจัดซื้อ/จัดส่ง" accentClass="border-l-violet-500" />
+          <KpiCard icon={<TrendingUp className="h-4.5 w-4.5 text-cyan-600" />} iconBgClass="bg-cyan-100/80 text-cyan-700" label="MTTR (จำลอง)" value={kpi.mockMttr} unit="ชม." sub="เฉลี่ยเวลาซ่อม" accentClass="border-l-cyan-500" />
         </div>
       </section>
 

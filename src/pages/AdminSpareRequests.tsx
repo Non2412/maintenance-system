@@ -87,9 +87,9 @@ function DetailDrawer({ item, onClose }: { item: SparePartRequest; onClose: () =
   const u = URGENCY_CONFIG[item.urgency];
   return (
     <div className="fixed inset-0 z-40 flex justify-end">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative w-full max-w-sm bg-card border-l shadow-2xl flex flex-col animate-slide-up">
-        <div className="p-5 border-b flex items-center justify-between">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-xs animate-in fade-in duration-300" onClick={onClose} />
+      <div className="relative w-full sm:max-w-md bg-card sm:border-l shadow-2xl flex flex-col h-full z-10 animate-in slide-in-from-right duration-300 ease-out">
+        <div className="p-4 sm:p-5 border-b flex items-center justify-between">
           <div>
             <p className="text-xs text-muted-foreground font-mono">{item.sr_id}</p>
             <h3 className="font-bold text-base">{item.part_name}</h3>
