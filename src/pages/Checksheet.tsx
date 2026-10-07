@@ -132,22 +132,23 @@ function FillView({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-background">
-      <div className="sticky top-0 z-10 text-white px-4 py-3 flex items-center gap-3 shadow-md"
-        style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' }}>
-        <div className="h-8 w-8 rounded-lg grid place-items-center shrink-0" style={{ background: 'rgba(255,255,255,0.2)' }}>
+    <div className="flex-1 flex flex-col min-h-0 rounded-xl border bg-card shadow-sm overflow-hidden">
+      <div className="shrink-0 text-white px-4 py-3 flex items-center gap-3 shadow-md"
+        style={{ background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' }}>
+        <div className="h-8 w-8 rounded-lg grid place-items-center shrink-0" style={{ background: 'rgba(255,255,255,0.15)' }}>
           <ClipboardList className="h-4 w-4 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>กรอกเช็คชีท</p>
+          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>กรอกเช็คชีท</p>
           <h2 className="font-bold truncate">{template.name}</h2>
         </div>
-        <button onClick={onClose} style={{ color: 'rgba(255,255,255,0.7)' }} className="hover:text-white transition-colors">
+        <button onClick={onClose} style={{ color: 'rgba(255,255,255,0.7)' }} className="hover:text-white transition-colors" aria-label="ปิด">
           <X className="h-5 w-5" />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 max-w-5xl mx-auto w-full">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
+        <div className="max-w-5xl mx-auto space-y-4">
         <div className="flex gap-3 flex-wrap">
           <div>
             <label className="text-xs text-muted-foreground font-medium block mb-1">กะ</label>
@@ -266,13 +267,16 @@ function FillView({
             <span>พบรายการที่ไม่ผ่านการตรวจสอบ ระบบจะ Flag เพื่อให้ติดตาม</span>
           </div>
         )}
+        </div>
       </div>
 
-      <div className="sticky bottom-0 bg-background/90 backdrop-blur border-t px-4 py-3 flex gap-3 max-w-5xl mx-auto w-full">
-        <Button variant="outline" className="flex-1" onClick={onClose}>ยกเลิก</Button>
-        <Button className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white" onClick={handleSubmit}>
-          <Save className="h-4 w-4 mr-2" /> บันทึกเช็คชีท
-        </Button>
+      <div className="shrink-0 bg-background/95 backdrop-blur border-t px-4 py-3 shadow-sm">
+        <div className="max-w-5xl mx-auto flex gap-3 w-full">
+          <Button variant="outline" className="flex-1" onClick={onClose}>ยกเลิก</Button>
+          <Button className="flex-1 bg-slate-800 hover:bg-slate-900 text-white font-medium" onClick={handleSubmit}>
+            <Save className="h-4 w-4 mr-2" /> บันทึกเช็คชีท
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -330,22 +334,23 @@ function TemplateEditor({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-background">
-      <div className="sticky top-0 z-10 text-white px-4 py-3 flex items-center gap-3 shadow-md"
+    <div className="flex-1 flex flex-col min-h-0 rounded-xl border bg-card shadow-sm overflow-hidden">
+      <div className="shrink-0 text-white px-4 py-3 flex items-center gap-3 shadow-md"
         style={{ background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' }}>
         <div className="h-8 w-8 rounded-lg grid place-items-center shrink-0" style={{ background: 'rgba(255,255,255,0.15)' }}>
           <Pencil className="h-4 w-4 text-white" />
         </div>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <p className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>{isNew ? 'สร้าง Template ใหม่' : 'แก้ไข Template'}</p>
-          <h2 className="font-bold">{name || '(ยังไม่มีชื่อ)'}</h2>
+          <h2 className="font-bold truncate">{name || '(ยังไม่มีชื่อ)'}</h2>
         </div>
-        <button onClick={onClose} style={{ color: 'rgba(255,255,255,0.7)' }} className="hover:text-white transition-colors">
+        <button onClick={onClose} style={{ color: 'rgba(255,255,255,0.7)' }} className="hover:text-white transition-colors" aria-label="ปิด">
           <X className="h-5 w-5" />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 max-w-4xl mx-auto w-full">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5">
+        <div className="max-w-4xl mx-auto space-y-5">
         <Card className="p-5 space-y-4">
           <h3 className="font-semibold text-sm flex items-center gap-2">
             <ClipboardList className="h-4 w-4 text-primary" />ข้อมูลพื้นฐาน
@@ -439,13 +444,16 @@ function TemplateEditor({
             ))}
           </div>
         </Card>
+        </div>
       </div>
 
-      <div className="sticky bottom-0 bg-background/90 backdrop-blur border-t px-4 py-3 flex gap-3 max-w-4xl mx-auto w-full">
-        <Button variant="outline" className="flex-1" onClick={onClose}>ยกเลิก</Button>
-        <Button className="flex-1 bg-slate-800 hover:bg-slate-900 text-white" onClick={handleSave} disabled={!name.trim()}>
-          <Save className="h-4 w-4 mr-2" /> {isNew ? 'สร้าง Template' : 'บันทึกการเปลี่ยนแปลง'}
-        </Button>
+      <div className="shrink-0 bg-background/95 backdrop-blur border-t px-4 py-3 shadow-sm">
+        <div className="max-w-4xl mx-auto flex gap-3 w-full">
+          <Button variant="outline" className="flex-1" onClick={onClose}>ยกเลิก</Button>
+          <Button className="flex-1 bg-slate-800 hover:bg-slate-900 text-white font-medium" onClick={handleSave} disabled={!name.trim()}>
+            <Save className="h-4 w-4 mr-2" /> {isNew ? 'สร้าง Template' : 'บันทึกการเปลี่ยนแปลง'}
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -631,17 +639,30 @@ export default function Checksheet({ embedded = false, onBack }: ChecksheetProps
             </div>
           </Card>
         )}
-      {fillTarget && (
-        <FillView template={fillTarget} onClose={() => setFillTarget(null)} onSubmit={handleSubmitRecord} />
-      )}
-      {editTarget !== undefined && (
-        <TemplateEditor template={editTarget} onClose={() => setEditTarget(undefined)} onSave={handleSaveTemplate} />
-      )}
     </div>
   );
 
+  let currentContent = bodyContent;
+  if (editTarget !== undefined) {
+    currentContent = (
+      <TemplateEditor
+        template={editTarget}
+        onClose={() => setEditTarget(undefined)}
+        onSave={handleSaveTemplate}
+      />
+    );
+  } else if (fillTarget) {
+    currentContent = (
+      <FillView
+        template={fillTarget}
+        onClose={() => setFillTarget(null)}
+        onSubmit={handleSubmitRecord}
+      />
+    );
+  }
+
   if (embedded) {
-    return bodyContent;
+    return currentContent;
   }
 
   return (
@@ -692,8 +713,8 @@ export default function Checksheet({ embedded = false, onBack }: ChecksheetProps
         </div>
       </header>
 
-      <main className="flex-1 p-4 md:p-6 space-y-6 max-w-7xl mx-auto w-full">
-        {bodyContent}
+      <main className="flex-1 p-4 md:p-6 flex flex-col min-h-0 max-w-7xl mx-auto w-full">
+        {currentContent}
       </main>
     </div>
   );

@@ -1001,9 +1001,9 @@ export default function AdminDashboard({ defaultTab }: AdminDashboardProps = {})
         </aside>
 
         {/* ── Main Content ─────────────────────────────────────────────────── */}
-        <main className="flex-1 overflow-y-auto min-w-0">
+        <main className="flex-1 overflow-y-auto min-w-0 flex flex-col">
           {/* Page title bar */}
-          <div className="sticky top-0 z-10 bg-background/90 backdrop-blur border-b px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between">
+          <div className="sticky top-0 z-10 bg-background/90 backdrop-blur border-b px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2 sm:gap-3">
               {isChecksheetSystem ? (
                 <>
@@ -1065,7 +1065,7 @@ export default function AdminDashboard({ defaultTab }: AdminDashboardProps = {})
             </div>
           </div>
 
-          <div className="p-4 sm:p-6 animate-slide-up">
+          <div className={cn("p-4 sm:p-6 animate-slide-up", isChecksheetSystem && "flex-1 flex flex-col min-h-0")}>
             {isChecksheetSystem ? (
               <Checksheet
                 embedded
