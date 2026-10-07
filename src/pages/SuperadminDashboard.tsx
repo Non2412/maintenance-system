@@ -401,9 +401,9 @@ export default function SuperadminDashboard() {
   const activeNavItem = NAV_ITEMS.find((n) => n.key === activeNav)!;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
       {/* ── Top Header ─────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-30 shadow-md" style={{ background: "linear-gradient(135deg, hsl(260 70% 25%) 0%, hsl(280 60% 35%) 50%, hsl(300 50% 30%) 100%)" }}>
+      <header className="shrink-0 z-30 shadow-md" style={{ background: "linear-gradient(135deg, hsl(260 70% 25%) 0%, hsl(280 60% 35%) 50%, hsl(300 50% 30%) 100%)" }}>
         <div className="px-4 py-3 flex items-center gap-3 text-white">
           <Button
             variant="ghost"
@@ -448,36 +448,43 @@ export default function SuperadminDashboard() {
       </header>
 
       {/* ── Body: Sidebar + Content ─────────────────────────────────────────── */}
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="flex-1 flex min-h-0 overflow-hidden relative">
         {/* Mobile overlay */}
         {sidebarOpen && (
-          <div className="fixed inset-0 z-20 bg-black/40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+          <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={() => setSidebarOpen(false)} />
         )}
 
         {/* ── Sidebar ── */}
         <aside
           className={cn(
-            "fixed lg:sticky top-[49px] z-20 h-[calc(100vh-49px)] w-56 shrink-0",
-            "flex flex-col bg-sidebar transition-transform duration-300 ease-in-out",
-            "border-r border-sidebar-border",
+            "fixed inset-y-0 left-0 z-40 lg:static lg:z-auto",
+            "w-56 h-full shrink-0 flex flex-col bg-sidebar border-r border-sidebar-border shadow-2xl lg:shadow-none",
+            "transition-transform duration-300 ease-in-out",
             sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
           )}
         >
           {/* User card */}
-          <div className="p-3 border-b border-sidebar-border">
-            <div className="flex items-center gap-2.5">
+          <div className="p-3 border-b border-sidebar-border shrink-0 flex items-center justify-between">
+            <div className="flex items-center gap-2.5 min-w-0">
               <div className="h-8 w-8 rounded-full grid place-items-center text-amber-900 font-bold text-xs shrink-0" style={{ background: "linear-gradient(135deg, #fbbf24, #f59e0b)" }}>
                 SA
               </div>
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-sidebar-foreground truncate">Superadmin</p>
-                <p className="text-[10px] text-sidebar-foreground/60">SA001 · Full Access</p>
+                <p className="text-[10px] text-sidebar-foreground/60 truncate">SA001 · Full Access</p>
               </div>
             </div>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden text-sidebar-foreground/60 hover:text-sidebar-foreground p-1 shrink-0"
+              aria-label="ปิดเมนู"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
+          <nav className="flex-1 min-h-0 p-2 space-y-0.5 overflow-y-auto">
             <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-sidebar-foreground/40 px-2 py-1">
               เมนูหลัก
             </p>
@@ -524,7 +531,7 @@ export default function SuperadminDashboard() {
           </nav>
 
           {/* Mini KPI at bottom */}
-          <div className="p-2.5 border-t border-sidebar-border space-y-1">
+          <div className="p-2.5 border-t border-sidebar-border space-y-1 shrink-0">
             <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-sidebar-foreground/40 px-1">สรุปด่วน</p>
             {[
               { label: "งานทั้งหมด", value: kpi.total, dot: "bg-primary" },
@@ -543,7 +550,7 @@ export default function SuperadminDashboard() {
           </div>
 
           {/* Logout */}
-          <div className="p-2 border-t border-sidebar-border">
+          <div className="p-2 border-t border-sidebar-border shrink-0">
             <button
               onClick={() => navigate("/")}
               className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors text-xs"
@@ -555,7 +562,7 @@ export default function SuperadminDashboard() {
         </aside>
 
         {/* ── Main Content ── */}
-        <main className="flex-1 overflow-y-auto min-w-0">
+        <main className="flex-1 min-w-0 min-h-0 overflow-y-auto">
           <div className="sticky top-0 z-10 bg-background/90 backdrop-blur border-b px-4 py-2 flex items-center gap-2">
             <div className="h-5 w-5 rounded grid place-items-center text-primary">{activeNavItem.icon}</div>
             <div>

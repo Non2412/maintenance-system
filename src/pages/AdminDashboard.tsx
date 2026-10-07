@@ -18,6 +18,7 @@ import {
   Legend,
   LineChart,
   Line,
+  LabelList,
 } from "recharts";
 import {
   Wrench,
@@ -39,15 +40,21 @@ import {
   ArrowRight,
   ArrowLeft,
   History,
+  Search,
+  Plus,
+  UserPlus,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useRequests } from "@/lib/requestStore";
 import {
   CATEGORY_LABEL,
   STATUS_LABEL,
   PRIORITY_LABEL,
   TECHNICIAN_MAP,
+  addTechnician,
+  Technician,
   timeAgo,
   WorkRequest,
   MOCK_SPARE_PARTS_EXTENDED,
@@ -343,38 +350,176 @@ function PipelineSection({
   urgentJobs: WorkRequest[];
   maxPipelineCount: number;
 }) {
+  const [viewMode, setViewMode] = useState<"bar" | "list">("bar");
+  const totalJobs = statusPipeline.reduce((acc, curr) => acc + curr.count, 0);
+  const activeJobs = statusPipeline.filter((s) => s.key !== "complete").reduce((acc, curr) => acc + curr.count, 0);
+
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Pipeline */}
       <section>
-        <SectionTitle icon={<ChevronRight className="h-4 w-4" />} title="Status Pipeline — การไหลของงาน" />
-        <Card className="p-4 sm:p-5">
-          <div className="space-y-3">
-            {statusPipeline.map((s) => (
-              <div key={s.key} className="flex items-center gap-2.5 sm:gap-3">
-                <div className="flex items-center gap-1.5 shrink-0 text-xs font-medium text-foreground">
-                  <span
-                    className="h-2 w-2 rounded-full shrink-0"
-                    style={{ backgroundColor: STATUS_BAR_COLOR[s.key] }}
-                  />
-                  <span>{s.label}</span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <SectionTitle icon={<BarChart3 className="h-4 w-4" />} title="Status Pipeline — การไหลของงาน" />
+
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-1 p-1 bg-muted/80 rounded-lg border text-xs self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setViewMode("bar")}
+              className={cn(
+                "px-2.5 py-1 rounded-md font-semibold transition-all flex items-center gap-1.5",
+                viewMode === "bar"
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <BarChart3 className="h-3.5 w-3.5" />
+              <span>กราฟแท่ง</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              className={cn(
+                "px-2.5 py-1 rounded-md font-semibold transition-all flex items-center gap-1.5",
+                viewMode === "list"
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Activity className="h-3.5 w-3.5" />
+              <span>แถบแนวนอน</span>
+            </button>
+          </div>
+        </div>
+
+        <Card className="p-4 sm:p-6 shadow-sm border bg-card space-y-5">
+          {/* Header Summary Chips */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b">
+            <div>
+              <h3 className="font-semibold text-sm text-foreground">สถิติจำนวนงานในแต่ละขั้นตอน</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">ติดตามปริมาณงานคงค้างและขั้นตอนที่งานไหลผ่านตั้งแต่เปิดงานจนถึงเสร็จสิ้น</p>
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="px-3 py-1 rounded-full bg-primary/10 text-primary font-semibold">
+                งานทั้งหมด {totalJobs} รายการ
+              </span>
+              <span className="px-3 py-1 rounded-full bg-amber-500/15 text-amber-700 font-semibold border border-amber-200">
+                กำลังดำเนินการ {activeJobs} รายการ
+              </span>
+            </div>
+          </div>
+
+          {viewMode === "bar" ? (
+            /* ── Bar Chart View ── */
+            <div className="w-full">
+              <div className="w-full overflow-x-auto pb-2">
+                <div className="min-w-[560px] h-[340px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={statusPipeline}
+                      margin={{ top: 25, right: 16, left: -16, bottom: 25 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(215 18% 90%)" />
+                      <XAxis
+                        dataKey="label"
+                        tick={{ fontSize: 11, fontWeight: 500, fill: "hsl(215 28% 30%)" }}
+                        interval={0}
+                        tickLine={false}
+                        axisLine={{ stroke: "hsl(215 18% 85%)" }}
+                      />
+                      <YAxis
+                        allowDecimals={false}
+                        tick={{ fontSize: 11, fill: "hsl(215 14% 45%)" }}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <Tooltip
+                        content={<ChartTooltip />}
+                        cursor={{ fill: "hsl(215 20% 95% / 0.6)" }}
+                      />
+                      <Bar
+                        dataKey="count"
+                        name="จำนวนงาน"
+                        radius={[6, 6, 0, 0]}
+                        maxBarSize={48}
+                      >
+                        {statusPipeline.map((entry) => (
+                          <Cell
+                            key={entry.key}
+                            fill={STATUS_BAR_COLOR[entry.key] || "#3b82f6"}
+                          />
+                        ))}
+                        <LabelList
+                          dataKey="count"
+                          position="top"
+                          formatter={(val: number) => (val > 0 ? val : "")}
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 700,
+                            fill: "hsl(215 28% 25%)",
+                          }}
+                        />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
-                <div className="flex-1 bg-muted/60 rounded-full h-6 sm:h-7 overflow-hidden">
+              </div>
+
+              {/* Status Summary Cards Grid below chart */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 pt-4 border-t mt-4">
+                {statusPipeline.map((s) => (
                   <div
-                    className="h-full rounded-full flex items-center justify-center sm:justify-end pr-0 sm:pr-2 text-xs font-bold text-white transition-all duration-700"
-                    style={{
-                      width: `${Math.max((s.count / maxPipelineCount) * 100, s.count > 0 ? 7 : 0)}%`,
-                      minWidth: s.count > 0 ? "24px" : "0px",
-                      backgroundColor: STATUS_BAR_COLOR[s.key],
-                    }}
+                    key={s.key}
+                    className="flex flex-col items-center justify-center p-2.5 rounded-lg bg-muted/40 hover:bg-muted/70 transition-colors border text-center"
                   >
-                    {s.count > 0 && s.count}
+                    <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground truncate mb-1">
+                      <span
+                        className="h-2 w-2 rounded-full shrink-0"
+                        style={{ backgroundColor: STATUS_BAR_COLOR[s.key] }}
+                      />
+                      <span className="truncate">{s.label}</span>
+                    </div>
+                    <span
+                      className="text-lg font-bold tabular-nums"
+                      style={{ color: s.count > 0 ? STATUS_BAR_COLOR[s.key] : undefined }}
+                    >
+                      {s.count}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            /* ── Progress Bar List View ── */
+            <div className="space-y-3.5">
+              {statusPipeline.map((s) => (
+                <div key={s.key} className="flex items-center gap-2.5 sm:gap-3">
+                  <div className="flex items-center gap-1.5 shrink-0 text-xs font-medium text-foreground w-28">
+                    <span
+                      className="h-2 w-2 rounded-full shrink-0"
+                      style={{ backgroundColor: STATUS_BAR_COLOR[s.key] }}
+                    />
+                    <span className="truncate">{s.label}</span>
+                  </div>
+                  <div className="flex-1 bg-muted/60 rounded-full h-6 sm:h-7 overflow-hidden">
+                    <div
+                      className="h-full rounded-full flex items-center justify-center sm:justify-end pr-0 sm:pr-2 text-xs font-bold text-white transition-all duration-700"
+                      style={{
+                        width: `${Math.max((s.count / maxPipelineCount) * 100, s.count > 0 ? 7 : 0)}%`,
+                        minWidth: s.count > 0 ? "24px" : "0px",
+                        backgroundColor: STATUS_BAR_COLOR[s.key],
+                      }}
+                    >
+                      {s.count > 0 && s.count}
+                    </div>
+                  </div>
+                  <div className={cn("w-6 sm:w-7 text-xs font-semibold tabular-nums text-right shrink-0", s.count === 0 && "text-muted-foreground")}>
+                    {s.count}
                   </div>
                 </div>
-                <div className={cn("w-6 sm:w-7 text-xs font-semibold tabular-nums text-right shrink-0", s.count === 0 && "text-muted-foreground")}>{s.count}</div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </Card>
       </section>
 
@@ -427,75 +572,356 @@ function TeamSection({
   navigate: (p: string) => void;
   onNavigateNav?: (key: NavKey) => void;
 }) {
+  const [extraTechs, setExtraTechs] = useState<Technician[]>([]);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"all" | "active" | "available">("all");
+  const [sort, setSort] = useState<"pending" | "completion" | "total" | "name">("pending");
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [newId, setNewId] = useState("");
+  const [newName, setNewName] = useState("");
+  const [newDept, setNewDept] = useState("ฝ่ายซ่อมบำรุง");
+
+  const allTechPerf = useMemo(() => {
+    const map = new Map<string, (typeof techPerf)[0]>();
+    techPerf.forEach((p) => map.set(p.id, p));
+    extraTechs.forEach((t) => {
+      if (!map.has(t.technician_id)) {
+        map.set(t.technician_id, {
+          id: t.technician_id,
+          name: t.name,
+          department: t.department,
+          total: 0,
+          done: 0,
+          inProgress: 0,
+          pending: 0,
+        });
+      }
+    });
+    return Array.from(map.values());
+  }, [techPerf, extraTechs]);
+
+  // KPI Calculations
+  const totalCount = allTechPerf.length;
+  const activeCount = allTechPerf.filter((t) => t.pending > 0 || t.inProgress > 0).length;
+  const availableCount = allTechPerf.filter((t) => t.pending === 0 && t.inProgress === 0).length;
+  const totalJobs = allTechPerf.reduce((s, t) => s + t.total, 0);
+  const totalDone = allTechPerf.reduce((s, t) => s + t.done, 0);
+  const avgCompletion = totalJobs > 0 ? Math.round((totalDone / totalJobs) * 100) : 0;
+
+  // Filter & Search
+  const filteredTechs = useMemo(() => {
+    return allTechPerf
+      .filter((t) => {
+        const matchesSearch =
+          t.name.toLowerCase().includes(search.toLowerCase()) ||
+          t.id.toLowerCase().includes(search.toLowerCase());
+        if (!matchesSearch) return false;
+
+        if (filter === "active") return t.pending > 0 || t.inProgress > 0;
+        if (filter === "available") return t.pending === 0 && t.inProgress === 0;
+        return true;
+      })
+      .sort((a, b) => {
+        if (sort === "pending") return (b.pending + b.inProgress) - (a.pending + a.inProgress);
+        if (sort === "completion") {
+          const pctA = a.total > 0 ? a.done / a.total : 0;
+          const pctB = b.total > 0 ? b.done / b.total : 0;
+          return pctB - pctA;
+        }
+        if (sort === "total") return b.total - a.total;
+        if (sort === "name") return a.name.localeCompare(b.name, "th");
+        return 0;
+      });
+  }, [allTechPerf, search, filter, sort]);
+
+  const handleOpenAdd = () => {
+    const nextNum = allTechPerf.length + 1;
+    setNewId(`TECH${String(nextNum).padStart(3, "0")}`);
+    setNewName("");
+    setNewDept("ฝ่ายซ่อมบำรุง");
+    setIsAddOpen(true);
+  };
+
+  const handleSaveAdd = () => {
+    if (!newName.trim() || !newId.trim()) return;
+    const newTech: Technician = {
+      technician_id: newId.trim().toUpperCase(),
+      name: newName.trim(),
+      department: newDept.trim(),
+    };
+    addTechnician(newTech);
+    setExtraTechs((prev) => [...prev, newTech]);
+    setIsAddOpen(false);
+  };
+
   return (
     <div className="space-y-6">
-      <Card className="p-5">
-        <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">งานที่รับผิดชอบแต่ละคน</p>
-        <ResponsiveContainer width="100%" height={200}>
-          <BarChart
-            data={techPerf.map((t) => ({ name: t.name, รับงาน: t.total, เสร็จ: t.done, ดำเนินการ: t.inProgress }))}
-            margin={{ top: 4, right: 8, left: -16, bottom: 0 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(215 18% 87%)" />
-            <XAxis dataKey="name" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-            <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} allowDecimals={false} />
-            <Tooltip content={<ChartTooltip />} />
-            <Bar dataKey="รับงาน" fill="hsl(215 60% 40%)" radius={[3, 3, 0, 0]} />
-            <Bar dataKey="เสร็จ" fill="hsl(142 65% 38%)" radius={[3, 3, 0, 0]} />
-            <Bar dataKey="ดำเนินการ" fill="hsl(38 92% 50%)" radius={[3, 3, 0, 0]} />
-            <Legend iconType="circle" iconSize={8} formatter={(v) => <span style={{ fontSize: 11 }}>{v}</span>} />
-          </BarChart>
-        </ResponsiveContainer>
-      </Card>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {techPerf.map((tech) => {
-          const pct = tech.total > 0 ? Math.round((tech.done / tech.total) * 100) : 0;
-          return (
-            <Card key={tech.id} className="p-5 space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-gradient-primary grid place-items-center text-primary-foreground font-bold text-sm shrink-0">
-                  {tech.name.charAt(0)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm">{tech.name}</p>
-                  <p className="text-xs text-muted-foreground">{tech.id}</p>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-muted-foreground">อัตราปิดงาน</span>
-                  <span className="font-semibold">{pct}%</span>
-                </div>
-                <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-500 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                <div className="rounded-md bg-muted py-2">
-                  <p className="text-base font-bold tabular-nums">{tech.total}</p>
-                  <p className="text-muted-foreground">รับงาน</p>
-                </div>
-                <div className="rounded-md bg-emerald-50 py-2">
-                  <p className="text-base font-bold text-emerald-700 tabular-nums">{tech.done}</p>
-                  <p className="text-emerald-600">เสร็จ</p>
-                </div>
-                <div className="rounded-md bg-amber-50 py-2">
-                  <p className="text-base font-bold text-amber-700 tabular-nums">{tech.pending}</p>
-                  <p className="text-amber-600">ค้างงาน</p>
-                </div>
-              </div>
-              <button
-                className="w-full flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-medium border-slate-200 text-slate-800 hover:bg-slate-50 transition-colors"
-                onClick={() => navigate(`/admin/technician/${tech.id}`, { state: { from: "team" } })}
-              >
-                ดูรายละเอียด <ChevronRight className="h-3.5 w-3.5" />
-              </button>
-            </Card>
-          );
-        })}
+      {/* ── Mini KPI Overview Cards ────────────────────────────────────────── */}
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
+        {[
+          { label: "ช่างทั้งหมด", value: `${totalCount} คน`, icon: <Users className="h-4 w-4 text-indigo-500" />, b: "border-l-indigo-500" },
+          { label: "กำลังปฏิบัติงาน", value: `${activeCount} คน`, icon: <Wrench className="h-4 w-4 text-amber-500" />, b: "border-l-amber-500" },
+          { label: "พร้อมรับงาน (ว่าง)", value: `${availableCount} คน`, icon: <CheckCircle2 className="h-4 w-4 text-emerald-500" />, b: "border-l-emerald-500" },
+          { label: "อัตราปิดงานเฉลี่ย", value: `${avgCompletion}%`, icon: <TrendingUp className="h-4 w-4 text-sky-500" />, b: "border-l-sky-500" },
+        ].map((k) => (
+          <Card key={k.label} className={cn("p-4 border-l-4 hover:shadow-sm transition-shadow", k.b)}>
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{k.label}</p>
+              {k.icon}
+            </div>
+            <p className="text-2xl font-bold tabular-nums mt-1">{k.value}</p>
+          </Card>
+        ))}
       </div>
 
+      {/* ── Chart Card with horizontal scroll capability ───────────────────── */}
+      <Card className="p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              งานที่รับผิดชอบแต่ละคน
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              แสดงสถิติการรับงาน, งานที่เสร็จแล้ว และงานที่อยู่ระหว่างดำเนินการ
+            </p>
+          </div>
+          <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-md w-fit">
+            ทีมช่างทั้งหมด {allTechPerf.length} คน
+          </span>
+        </div>
+        <div className="overflow-x-auto pb-2 -mx-2 px-2">
+          <div style={{ minWidth: `${Math.max(500, allTechPerf.length * 85)}px`, height: 210 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={allTechPerf.map((t) => ({
+                  name: t.name,
+                  รับงาน: t.total,
+                  เสร็จ: t.done,
+                  ดำเนินการ: t.inProgress,
+                }))}
+                margin={{ top: 8, right: 12, left: -16, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(215 18% 87%)" />
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} allowDecimals={false} />
+                <Tooltip content={<ChartTooltip />} />
+                <Bar dataKey="รับงาน" fill="hsl(215 60% 40%)" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="เสร็จ" fill="hsl(142 65% 38%)" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="ดำเนินการ" fill="hsl(38 92% 50%)" radius={[3, 3, 0, 0]} />
+                <Legend iconType="circle" iconSize={8} formatter={(v) => <span style={{ fontSize: 11 }}>{v}</span>} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </Card>
+
+      {/* ── Toolbar: Search, Filter, Sort, Add Technician ─────────────────── */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        {/* Left: Search input & filter */}
+        <div className="flex flex-1 flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[200px] max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="ค้นหาชื่อช่าง หรือรหัส (เช่น TECH001)..."
+              className="pl-9 h-9 text-xs sm:text-sm bg-card"
+            />
+          </div>
+
+          <div className="flex items-center gap-1 bg-muted p-1 rounded-lg">
+            {[
+              { key: "all", label: `ทั้งหมด (${totalCount})` },
+              { key: "active", label: `ปฏิบัติงาน (${activeCount})` },
+              { key: "available", label: `พร้อมรับงาน (${availableCount})` },
+            ].map((f) => (
+              <button
+                key={f.key}
+                onClick={() => setFilter(f.key as "all" | "active" | "available")}
+                className={cn(
+                  "px-2.5 py-1 text-xs font-medium rounded-md transition-all whitespace-nowrap",
+                  filter === f.key
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Right: Sort & Add Technician */}
+        <div className="flex items-center gap-2 shrink-0">
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as "pending" | "completion" | "total" | "name")}
+            className="h-9 rounded-lg border border-border bg-card px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary font-medium"
+          >
+            <option value="pending">เรียง: งานค้างมากสุด</option>
+            <option value="completion">เรียง: อัตราปิดงานสูงสุด</option>
+            <option value="total">เรียง: รับงานทั้งหมด</option>
+            <option value="name">เรียง: ชื่อ ก-ฮ</option>
+          </select>
+
+          <Button
+            size="sm"
+            onClick={handleOpenAdd}
+            className="gap-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs h-9 font-medium shadow-sm"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span>เพิ่มช่าง</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* ── Technician Cards Grid ─────────────────────────────────────────── */}
+      {filteredTechs.length === 0 ? (
+        <Card className="p-8 text-center space-y-3">
+          <p className="text-muted-foreground text-sm">ไม่พบข้อมูลช่างตามเงื่อนไขที่ค้นหา</p>
+          <Button variant="outline" size="sm" onClick={() => { setSearch(""); setFilter("all"); }}>
+            ล้างตัวกรอง
+          </Button>
+        </Card>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {filteredTechs.map((tech) => {
+            const pct = tech.total > 0 ? Math.round((tech.done / tech.total) * 100) : 0;
+            const isBusy = tech.pending > 0 || tech.inProgress > 0;
+            return (
+              <Card key={tech.id} className="p-5 space-y-4 hover:shadow-md transition-shadow border-slate-200/80">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-10 w-10 rounded-full bg-gradient-primary grid place-items-center text-primary-foreground font-bold text-sm shrink-0 shadow-sm">
+                      {tech.name.charAt(0)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm truncate">{tech.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{tech.id} · {tech.department}</p>
+                    </div>
+                  </div>
+                  {isBusy ? (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full shrink-0">
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                      ปฏิบัติงาน
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full shrink-0">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                      พร้อมรับงาน
+                    </span>
+                  )}
+                </div>
+
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-muted-foreground">อัตราปิดงาน</span>
+                    <span className="font-semibold tabular-nums">{pct}%</span>
+                  </div>
+                  <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                    <div
+                      className={cn(
+                        "h-full rounded-full transition-all duration-700",
+                        pct >= 80 ? "bg-emerald-500" : pct >= 50 ? "bg-amber-500" : "bg-indigo-500"
+                      )}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                  <div className="rounded-md bg-muted/60 py-2">
+                    <p className="text-base font-bold tabular-nums text-foreground">{tech.total}</p>
+                    <p className="text-muted-foreground text-[11px]">รับงาน</p>
+                  </div>
+                  <div className="rounded-md bg-emerald-50 py-2 border border-emerald-100">
+                    <p className="text-base font-bold text-emerald-700 tabular-nums">{tech.done}</p>
+                    <p className="text-emerald-600 text-[11px]">เสร็จ</p>
+                  </div>
+                  <div className="rounded-md bg-amber-50 py-2 border border-amber-100">
+                    <p className="text-base font-bold text-amber-700 tabular-nums">{tech.pending}</p>
+                    <p className="text-amber-600 text-[11px]">ค้างงาน</p>
+                  </div>
+                </div>
+
+                <button
+                  className="w-full flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-medium border-slate-200 text-slate-800 hover:bg-slate-50 transition-colors"
+                  onClick={() => navigate(`/admin/technician/${tech.id}`, { state: { from: "team" } })}
+                >
+                  ดูรายละเอียด <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Add Technician Modal ─────────────────────────────────────────── */}
+      {isAddOpen && (
+        <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <Card className="w-full max-w-md p-5 space-y-4 shadow-xl border bg-card animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-primary/10 grid place-items-center text-primary font-bold">
+                  <UserPlus className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm">เพิ่มช่างใหม่ในระบบ</h3>
+                  <p className="text-xs text-muted-foreground">บันทึกข้อมูลช่างเพื่อพร้อมจ่ายงานและติดตามผลงาน</p>
+                </div>
+              </div>
+              <button onClick={() => setIsAddOpen(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="font-semibold text-muted-foreground mb-1 block">รหัสช่าง (Employee ID) *</label>
+                <Input
+                  value={newId}
+                  onChange={(e) => setNewId(e.target.value)}
+                  placeholder="เช่น TECH007"
+                  className="h-9 text-xs"
+                />
+              </div>
+              <div>
+                <label className="font-semibold text-muted-foreground mb-1 block">ชื่อ - นามสกุล *</label>
+                <Input
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="เช่น เกียรติศักดิ์ ช่างเครื่อง"
+                  className="h-9 text-xs"
+                />
+              </div>
+              <div>
+                <label className="font-semibold text-muted-foreground mb-1 block">แผนก / ความเชี่ยวชาญ</label>
+                <Input
+                  value={newDept}
+                  onChange={(e) => setNewDept(e.target.value)}
+                  placeholder="เช่น ฝ่ายซ่อมบำรุง / เครื่องกล"
+                  className="h-9 text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" className="flex-1 text-xs h-9" onClick={() => setIsAddOpen(false)}>
+                ยกเลิก
+              </Button>
+              <Button
+                className="flex-1 text-xs h-9 bg-slate-800 hover:bg-slate-900 text-white"
+                onClick={handleSaveAdd}
+                disabled={!newName.trim() || !newId.trim()}
+              >
+                บันทึกช่างใหม่
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* ── Bottom Link Card ────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row items-center justify-between p-4 rounded-xl border bg-card gap-3 shadow-sm">
         <div>
           <p className="text-sm font-semibold">ประวัติและ Timeline การทำงานของช่างทั้งหมด</p>
@@ -533,6 +959,7 @@ function useTechPerf(requests: WorkRequest[]) {
       return {
         id: tech.technician_id,
         name: tech.name,
+        department: tech.department,
         total: mine.length,
         done: mine.filter((r) => r.status === "complete").length,
         inProgress: mine.filter((r) => r.status === "doing").length,
@@ -846,9 +1273,9 @@ export default function AdminDashboard({ defaultTab }: AdminDashboardProps = {})
   const activeNavItem = NAV_ITEMS.find((n) => n.key === activeNav) || NAV_ITEMS[0];
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
       {/* ── Top Header ─────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-30 bg-gradient-primary text-primary-foreground shadow-md">
+      <header className="shrink-0 z-30 bg-gradient-primary text-primary-foreground shadow-md">
         <div className="px-4 py-3 flex items-center gap-3">
           {/* Mobile sidebar toggle */}
           <Button
@@ -889,12 +1316,12 @@ export default function AdminDashboard({ defaultTab }: AdminDashboardProps = {})
       </header>
 
       {/* ── Body: Sidebar + Content ──────────────────────────────────────────── */}
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="flex-1 flex min-h-0 overflow-hidden relative">
 
         {/* Mobile overlay */}
         {sidebarOpen && (
           <div
-            className="fixed inset-0 z-20 bg-black/40 lg:hidden"
+            className="fixed inset-0 z-30 bg-black/40 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
@@ -902,27 +1329,34 @@ export default function AdminDashboard({ defaultTab }: AdminDashboardProps = {})
         {/* ── Sidebar ──────────────────────────────────────────────────────── */}
         <aside
           className={cn(
-            "fixed lg:sticky top-[57px] z-20 h-[calc(100vh-57px)] w-64 shrink-0",
-            "flex flex-col bg-sidebar transition-transform duration-300 ease-in-out",
-            "border-r border-sidebar-border",
+            "fixed inset-y-0 left-0 z-40 lg:static lg:z-auto",
+            "w-64 h-full shrink-0 flex flex-col bg-sidebar border-r border-sidebar-border shadow-2xl lg:shadow-none",
+            "transition-transform duration-300 ease-in-out",
             sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
           )}
         >
           {/* User card */}
-          <div className="p-4 border-b border-sidebar-border">
-            <div className="flex items-center gap-3">
+          <div className="p-4 border-b border-sidebar-border shrink-0 flex items-center justify-between">
+            <div className="flex items-center gap-3 min-w-0">
               <div className="h-10 w-10 rounded-full bg-secondary grid place-items-center text-secondary-foreground font-bold text-sm shrink-0">
                 ผ
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-sidebar-foreground truncate">ผู้จัดการฝ่ายซ่อมบำรุง</p>
-                <p className="text-xs text-sidebar-foreground/60">ADMIN001 · Management</p>
+                <p className="text-xs text-sidebar-foreground/60 truncate">ADMIN001 · Management</p>
               </div>
             </div>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden text-sidebar-foreground/60 hover:text-sidebar-foreground p-1 shrink-0"
+              aria-label="ปิดเมนู"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+          <nav className="flex-1 min-h-0 p-3 space-y-1 overflow-y-auto">
             <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-sidebar-foreground/40 px-3 py-2">
               เมนูหลัก
             </p>
@@ -970,7 +1404,7 @@ export default function AdminDashboard({ defaultTab }: AdminDashboardProps = {})
           </nav>
 
           {/* Mini KPI summary at bottom */}
-          <div className="p-3 border-t border-sidebar-border space-y-2">
+          <div className="p-3 border-t border-sidebar-border space-y-2 shrink-0">
             <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-sidebar-foreground/40 px-1">สรุปด่วน</p>
             {[
               { label: "งานทั้งหมด", value: kpi.total, dot: "bg-primary" },
@@ -989,7 +1423,7 @@ export default function AdminDashboard({ defaultTab }: AdminDashboardProps = {})
           </div>
 
           {/* Logout */}
-          <div className="p-3 border-t border-sidebar-border">
+          <div className="p-3 border-t border-sidebar-border shrink-0">
             <button
               onClick={() => navigate("/")}
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors text-sm"
@@ -1001,7 +1435,7 @@ export default function AdminDashboard({ defaultTab }: AdminDashboardProps = {})
         </aside>
 
         {/* ── Main Content ─────────────────────────────────────────────────── */}
-        <main className="flex-1 overflow-y-auto min-w-0">
+        <main className="flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden">
           {/* Page title bar */}
           <div className="sticky top-0 z-10 bg-background/90 backdrop-blur border-b px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between">
             <div className="flex items-center gap-2 sm:gap-3">

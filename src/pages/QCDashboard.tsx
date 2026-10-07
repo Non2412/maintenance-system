@@ -789,9 +789,9 @@ export default function QCDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-background flex flex-col text-slate-800">
+    <div className="h-screen flex flex-col bg-background text-slate-800 overflow-hidden">
       {/* ─── Topbar ────────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-30 bg-gradient-primary text-primary-foreground shadow-md">
+      <header className="shrink-0 z-30 bg-gradient-primary text-primary-foreground shadow-md">
         <div className="px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             {/* Mobile menu toggle */}
@@ -846,11 +846,11 @@ export default function QCDashboard() {
       </header>
 
       {/* ─── Body: Sidebar + Main Content ──────────────────────────────────── */}
-      <div className="flex-1 flex relative">
+      <div className="flex-1 flex min-h-0 overflow-hidden relative">
         {/* Mobile backdrop */}
         {sidebarOpen && (
           <div
-            className="fixed inset-0 z-20 bg-black/40 lg:hidden"
+            className="fixed inset-0 z-30 bg-black/40 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
@@ -858,27 +858,34 @@ export default function QCDashboard() {
         {/* ── Sidebar ── */}
         <aside
           className={cn(
-            "fixed lg:sticky top-[57px] z-20 h-[calc(100vh-57px)] w-64 shrink-0",
-            "flex flex-col bg-sidebar transition-transform duration-300 ease-in-out",
-            "border-r border-sidebar-border",
+            "fixed inset-y-0 left-0 z-40 lg:static lg:z-auto",
+            "w-64 h-full shrink-0 flex flex-col bg-sidebar border-r border-sidebar-border shadow-2xl lg:shadow-none",
+            "transition-transform duration-300 ease-in-out",
             sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
           )}
         >
           {/* User Card */}
-          <div className="p-4 border-b border-sidebar-border">
-            <div className="flex items-center gap-3">
+          <div className="p-4 border-b border-sidebar-border shrink-0 flex items-center justify-between">
+            <div className="flex items-center gap-3 min-w-0">
               <div className="h-10 w-10 rounded-full bg-secondary grid place-items-center text-secondary-foreground font-bold text-sm shrink-0">
                 QC
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-sidebar-foreground truncate">ณัฐพงศ์ สุขใจ</p>
-                <p className="text-xs text-sidebar-foreground/60">QC001 · Quality Control</p>
+                <p className="text-xs text-sidebar-foreground/60 truncate">QC001 · Quality Control</p>
               </div>
             </div>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden text-sidebar-foreground/60 hover:text-sidebar-foreground p-1 shrink-0"
+              aria-label="ปิดเมนู"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
 
           {/* Nav Items */}
-          <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+          <nav className="flex-1 min-h-0 p-3 space-y-1 overflow-y-auto">
             <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-sidebar-foreground/40 px-3 py-2">
               เมนู QC
             </p>
@@ -955,7 +962,7 @@ export default function QCDashboard() {
           </nav>
 
           {/* Mini KPI Summary in Sidebar */}
-          <div className="p-3 border-t border-sidebar-border space-y-2">
+          <div className="p-3 border-t border-sidebar-border space-y-2 shrink-0">
             <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-sidebar-foreground/40 px-1">สรุปด่วน QC</p>
             {[
               { label: "กำหนดการทั้งหมด", value: kpi.total, dot: "bg-primary" },
@@ -975,7 +982,7 @@ export default function QCDashboard() {
           </div>
 
           {/* Logout button */}
-          <div className="p-3 border-t border-sidebar-border">
+          <div className="p-3 border-t border-sidebar-border shrink-0">
             <button
               onClick={() => navigate("/")}
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors text-sm"
@@ -987,7 +994,7 @@ export default function QCDashboard() {
         </aside>
 
         {/* ── Main Content Area ── */}
-        <main className="flex-1 overflow-y-auto min-w-0">
+        <main className="flex-1 min-w-0 min-h-0 overflow-y-auto">
           {/* Sub Header / Action Bar */}
           <div className="sticky top-0 z-10 bg-background/90 backdrop-blur border-b px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
             <div>

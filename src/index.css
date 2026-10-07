@@ -5,6 +5,10 @@
 /* CMMS Industrial Design System — All colors HSL */
 
 @layer base {
+  html {
+    scrollbar-gutter: stable;
+  }
+
   :root {
     --background: 210 20% 97%;
     --foreground: 215 28% 17%;

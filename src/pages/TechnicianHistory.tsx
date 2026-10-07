@@ -216,7 +216,7 @@ export default function TechnicianHistory({ embedded = false }: TechnicianHistor
 
   // Category options
   const categories = useMemo(() => {
-    const set = new Set(allRows.map((r) => r.category));
+    const set = new Set(allRows.map((r) => r.category).filter(Boolean));
     return Array.from(set);
   }, [allRows]);
 

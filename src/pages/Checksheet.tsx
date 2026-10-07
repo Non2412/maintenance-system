@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
   ClipboardList, Plus, Pencil, Trash2, Play, History,
@@ -132,147 +133,159 @@ function FillView({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-background">
-      <div className="sticky top-0 z-10 text-white px-4 py-3 flex items-center gap-3 shadow-md"
-        style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' }}>
-        <div className="h-8 w-8 rounded-lg grid place-items-center shrink-0" style={{ background: 'rgba(255,255,255,0.2)' }}>
-          <ClipboardList className="h-4 w-4 text-white" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>กรอกเช็คชีท</p>
-          <h2 className="font-bold truncate">{template.name}</h2>
-        </div>
-        <button onClick={onClose} style={{ color: 'rgba(255,255,255,0.7)' }} className="hover:text-white transition-colors">
-          <X className="h-5 w-5" />
-        </button>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 max-w-5xl mx-auto w-full">
-        <div className="flex gap-3 flex-wrap">
-          <div>
-            <label className="text-xs text-muted-foreground font-medium block mb-1">กะ</label>
-            <div className="flex gap-1">
-              {(['A', 'B', 'C'] as const).map((s) => (
-                <button key={s} onClick={() => setShift(s)}
-                  className={cn('h-8 w-8 rounded-md border text-sm font-bold transition-colors',
-                    shift === s ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted border-border')}>
-                  {s}
-                </button>
-              ))}
-            </div>
+    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/40 backdrop-blur-[2px] animate-in fade-in duration-200">
+      <div className="h-full w-full flex flex-col bg-slate-100 dark:bg-slate-950 animate-in slide-in-from-bottom duration-300 ease-out">
+        <div className="sticky top-0 z-10 text-white px-4 py-3 flex items-center gap-3 shadow-md shrink-0"
+          style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' }}>
+          <div className="h-8 w-8 rounded-lg grid place-items-center shrink-0" style={{ background: 'rgba(255,255,255,0.2)' }}>
+            <ClipboardList className="h-4 w-4 text-white" />
           </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>กรอกเช็คชีท</p>
+            <h2 className="font-bold truncate">{template.name}</h2>
+          </div>
+          <button onClick={onClose} style={{ color: 'rgba(255,255,255,0.7)' }} className="hover:text-white transition-colors" aria-label="ปิด">
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="px-3 py-2 text-left text-xs font-semibold text-muted-foreground w-full">หัวข้อตรวจสอบ</th>
-                {template.columns.map((col) => (
-                  <th key={col.col_id}
-                    className={cn('px-3 py-2 text-center text-xs font-semibold text-muted-foreground whitespace-nowrap',
-                      col.width === 'sm' ? 'min-w-[80px]' : col.width === 'lg' ? 'min-w-[200px]' : 'min-w-[120px]')}>
-                    {col.label}{col.required && <span className="text-red-500 ml-0.5">*</span>}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(grouped).map(([group, items]) => (
-                <>
-                  <tr key={`g-${group}`} className="bg-muted/30">
-                    <td colSpan={template.columns.length + 1} className="px-3 py-1.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                      {group}
-                    </td>
-                  </tr>
-                  {items.map((item, idx) => {
-                    const rowBg = idx % 2 === 0 ? '' : 'bg-muted/10';
-                    return (
-                      <tr key={item.item_id} className={cn('border-b hover:bg-muted/20 transition-colors', rowBg)}>
-                        <td className="px-3 py-2.5 text-sm font-medium">{item.order}. {item.topic}</td>
-                        {template.columns.map((col) => {
-                          const val = getCellVal(item.item_id, col.col_id);
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 bg-slate-100 dark:bg-slate-950">
+          <div className="max-w-5xl mx-auto space-y-4">
+            <Card className="p-4 bg-white dark:bg-card border border-slate-200/90 shadow-sm rounded-xl">
+              <div className="flex gap-3 flex-wrap">
+                <div>
+                  <label className="text-xs text-muted-foreground font-medium block mb-1">กะ</label>
+                  <div className="flex gap-1">
+                    {(['A', 'B', 'C'] as const).map((s) => (
+                      <button key={s} onClick={() => setShift(s)}
+                        className={cn('h-8 w-8 rounded-md border text-sm font-bold transition-colors',
+                          shift === s ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted border-border')}>
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4 bg-white dark:bg-card border border-slate-200/90 shadow-sm rounded-xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-muted-foreground w-full">หัวข้อตรวจสอบ</th>
+                      {template.columns.map((col) => (
+                        <th key={col.col_id}
+                          className={cn('px-3 py-2 text-center text-xs font-semibold text-muted-foreground whitespace-nowrap',
+                            col.width === 'sm' ? 'min-w-[80px]' : col.width === 'lg' ? 'min-w-[200px]' : 'min-w-[120px]')}>
+                          {col.label}{col.required && <span className="text-red-500 ml-0.5">*</span>}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(grouped).map(([group, items]) => (
+                      <React.Fragment key={`g-frag-${group}`}>
+                        <tr key={`g-${group}`} className="bg-muted/30">
+                          <td colSpan={template.columns.length + 1} className="px-3 py-1.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                            {group}
+                          </td>
+                        </tr>
+                        {items.map((item, idx) => {
+                          const rowBg = idx % 2 === 0 ? '' : 'bg-muted/10';
                           return (
-                            <td key={col.col_id} className="px-3 py-2 text-center">
-                              {col.type === 'pass_fail' && (
-                                <div className="flex justify-center gap-1">
-                                  <button onClick={() => setCellVal(item.item_id, col.col_id, true)}
-                                    className={cn('h-7 w-7 rounded-md border text-xs font-bold transition-colors',
-                                      val === true ? 'bg-emerald-500 text-white border-emerald-500' : 'hover:bg-emerald-50 border-border')}>
-                                    ✓
-                                  </button>
-                                  <button onClick={() => setCellVal(item.item_id, col.col_id, false)}
-                                    className={cn('h-7 w-7 rounded-md border text-xs font-bold transition-colors',
-                                      val === false ? 'bg-red-500 text-white border-red-500' : 'hover:bg-red-50 border-border')}>
-                                    ✗
-                                  </button>
-                                </div>
-                              )}
-                              {col.type === 'checkbox' && (
-                                <input type="checkbox" checked={val === true}
-                                  onChange={(e) => setCellVal(item.item_id, col.col_id, e.target.checked)}
-                                  className="h-4 w-4 rounded cursor-pointer" />
-                              )}
-                              {col.type === 'text' && (
-                                <input type="text" value={(val as string) ?? ''}
-                                  onChange={(e) => setCellVal(item.item_id, col.col_id, e.target.value)}
-                                  className="w-full rounded border bg-background px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-                                  placeholder="ระบุ..." />
-                              )}
-                              {col.type === 'number' && (
-                                <input type="number" value={(val as string) ?? ''}
-                                  onChange={(e) => setCellVal(item.item_id, col.col_id, e.target.value)}
-                                  className="w-20 rounded border bg-background px-2 py-1 text-xs text-center focus:outline-none focus:ring-1 focus:ring-primary" />
-                              )}
-                              {col.type === 'dropdown' && (
-                                <select value={(val as string) ?? ''}
-                                  onChange={(e) => setCellVal(item.item_id, col.col_id, e.target.value)}
-                                  className="rounded border bg-background px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary">
-                                  <option value="">-</option>
-                                  {col.options?.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-                                </select>
-                              )}
-                              {col.type === 'rating' && (
-                                <div className="flex justify-center gap-0.5">
-                                  {[1, 2, 3, 4, 5].map((n) => (
-                                    <button key={n} onClick={() => setCellVal(item.item_id, col.col_id, n)}
-                                      className={cn('h-6 w-6 rounded text-xs font-bold transition-colors',
-                                        (val as number) >= n ? 'bg-amber-400 text-white' : 'bg-muted text-muted-foreground hover:bg-amber-100')}>
-                                      {n}
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </td>
+                            <tr key={item.item_id} className={cn('border-b hover:bg-muted/20 transition-colors', rowBg)}>
+                              <td className="px-3 py-2.5 text-sm font-medium">{item.order}. {item.topic}</td>
+                              {template.columns.map((col) => {
+                                const val = getCellVal(item.item_id, col.col_id);
+                                return (
+                                  <td key={col.col_id} className="px-3 py-2 text-center">
+                                    {col.type === 'pass_fail' && (
+                                      <div className="flex justify-center gap-1">
+                                        <button onClick={() => setCellVal(item.item_id, col.col_id, true)}
+                                          className={cn('h-7 w-7 rounded-md border text-xs font-bold transition-colors',
+                                            val === true ? 'bg-emerald-500 text-white border-emerald-500' : 'hover:bg-emerald-50 border-border')}>
+                                          ✓
+                                        </button>
+                                        <button onClick={() => setCellVal(item.item_id, col.col_id, false)}
+                                          className={cn('h-7 w-7 rounded-md border text-xs font-bold transition-colors',
+                                            val === false ? 'bg-red-500 text-white border-red-500' : 'hover:bg-red-50 border-border')}>
+                                          ✗
+                                        </button>
+                                      </div>
+                                    )}
+                                    {col.type === 'checkbox' && (
+                                      <input type="checkbox" checked={val === true}
+                                        onChange={(e) => setCellVal(item.item_id, col.col_id, e.target.checked)}
+                                        className="h-4 w-4 rounded cursor-pointer" />
+                                    )}
+                                    {col.type === 'text' && (
+                                      <input type="text" value={(val as string) ?? ''}
+                                        onChange={(e) => setCellVal(item.item_id, col.col_id, e.target.value)}
+                                        className="w-full rounded border bg-background px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                                        placeholder="ระบุ..." />
+                                    )}
+                                    {col.type === 'number' && (
+                                      <input type="number" value={(val as string) ?? ''}
+                                        onChange={(e) => setCellVal(item.item_id, col.col_id, e.target.value)}
+                                        className="w-20 rounded border bg-background px-2 py-1 text-xs text-center focus:outline-none focus:ring-1 focus:ring-primary" />
+                                    )}
+                                    {col.type === 'dropdown' && (
+                                      <select value={(val as string) ?? ''}
+                                        onChange={(e) => setCellVal(item.item_id, col.col_id, e.target.value)}
+                                        className="rounded border bg-background px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary">
+                                        <option value="">-</option>
+                                        {col.options?.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                                      </select>
+                                    )}
+                                    {col.type === 'rating' && (
+                                      <div className="flex justify-center gap-0.5">
+                                        {[1, 2, 3, 4, 5].map((n) => (
+                                          <button key={n} onClick={() => setCellVal(item.item_id, col.col_id, n)}
+                                            className={cn('h-6 w-6 rounded text-xs font-bold transition-colors',
+                                              (val as number) >= n ? 'bg-amber-400 text-white' : 'bg-muted text-muted-foreground hover:bg-amber-100')}>
+                                            {n}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </td>
+                                );
+                              })}
+                            </tr>
                           );
                         })}
-                      </tr>
-                    );
-                  })}
-                </>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
 
-        <div>
-          <label className="text-xs font-semibold text-muted-foreground mb-1.5 block uppercase tracking-wider">หมายเหตุ</label>
-          <textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="ระบุหมายเหตุ..."
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none" />
-        </div>
-        {isFlagged && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-3 flex items-center gap-2 text-sm text-red-700">
-            <Flag className="h-4 w-4 shrink-0" />
-            <span>พบรายการที่ไม่ผ่านการตรวจสอบ ระบบจะ Flag เพื่อให้ติดตาม</span>
+            <Card className="p-4 bg-white dark:bg-card border border-slate-200/90 shadow-sm rounded-xl space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block uppercase tracking-wider">หมายเหตุ</label>
+                <textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="ระบุหมายเหตุ..."
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none" />
+              </div>
+              {isFlagged && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 flex items-center gap-2 text-sm text-red-700">
+                  <Flag className="h-4 w-4 shrink-0" />
+                  <span>พบรายการที่ไม่ผ่านการตรวจสอบ ระบบจะ Flag เพื่อให้ติดตาม</span>
+                </div>
+              )}
+            </Card>
           </div>
-        )}
-      </div>
+        </div>
 
-      <div className="sticky bottom-0 bg-background/90 backdrop-blur border-t px-4 py-3 flex gap-3 max-w-5xl mx-auto w-full">
-        <Button variant="outline" className="flex-1" onClick={onClose}>ยกเลิก</Button>
-        <Button className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white" onClick={handleSubmit}>
-          <Save className="h-4 w-4 mr-2" /> บันทึกเช็คชีท
-        </Button>
+        <div className="sticky bottom-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200/80 px-4 py-3 shadow-sm shrink-0">
+          <div className="max-w-5xl mx-auto flex gap-3 w-full">
+            <Button variant="outline" className="flex-1" onClick={onClose}>ยกเลิก</Button>
+            <Button className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium" onClick={handleSubmit}>
+              <Save className="h-4 w-4 mr-2" /> บันทึกเช็คชีท
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -330,122 +343,128 @@ function TemplateEditor({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-background">
-      <div className="sticky top-0 z-10 text-white px-4 py-3 flex items-center gap-3 shadow-md"
-        style={{ background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' }}>
-        <div className="h-8 w-8 rounded-lg grid place-items-center shrink-0" style={{ background: 'rgba(255,255,255,0.15)' }}>
-          <Pencil className="h-4 w-4 text-white" />
+    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/40 backdrop-blur-[2px] animate-in fade-in duration-200">
+      <div className="h-full w-full flex flex-col bg-slate-100 dark:bg-slate-950 animate-in slide-in-from-bottom duration-300 ease-out">
+        <div className="sticky top-0 z-10 text-white px-4 py-3 flex items-center gap-3 shadow-md shrink-0"
+          style={{ background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' }}>
+          <div className="h-8 w-8 rounded-lg grid place-items-center shrink-0" style={{ background: 'rgba(255,255,255,0.15)' }}>
+            <Pencil className="h-4 w-4 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>{isNew ? 'สร้าง Template ใหม่' : 'แก้ไข Template'}</p>
+            <h2 className="font-bold truncate">{name || '(ยังไม่มีชื่อ)'}</h2>
+          </div>
+          <button onClick={onClose} style={{ color: 'rgba(255,255,255,0.7)' }} className="hover:text-white transition-colors" aria-label="ปิด">
+            <X className="h-5 w-5" />
+          </button>
         </div>
-        <div className="flex-1">
-          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>{isNew ? 'สร้าง Template ใหม่' : 'แก้ไข Template'}</p>
-          <h2 className="font-bold">{name || '(ยังไม่มีชื่อ)'}</h2>
-        </div>
-        <button onClick={onClose} style={{ color: 'rgba(255,255,255,0.7)' }} className="hover:text-white transition-colors">
-          <X className="h-5 w-5" />
-        </button>
-      </div>
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 max-w-4xl mx-auto w-full">
-        <Card className="p-5 space-y-4">
-          <h3 className="font-semibold text-sm flex items-center gap-2">
-            <ClipboardList className="h-4 w-4 text-primary" />ข้อมูลพื้นฐาน
-          </h3>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground mb-1 block">ชื่อเช็คชีท *</label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="เช่น ตรวจสอบเครื่องจักรรายวัน" />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground mb-1 block">ประเภทเครื่องจักร</label>
-              <Input value={machineType} onChange={(e) => setMachineType(e.target.value)} placeholder="เช่น Hydraulic Press" />
-            </div>
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-muted-foreground mb-1 block">คำอธิบาย</label>
-            <textarea rows={2} value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="อธิบายวัตถุประสงค์..."
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none" />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-muted-foreground mb-2 block">ความถี่</label>
-            <div className="flex flex-wrap gap-2">
-              {(Object.keys(FREQ_LABEL) as ChecksheetTemplate['frequency'][]).map((f) => (
-                <button key={f} onClick={() => setFreq(f)}
-                  className={cn('rounded-full px-3 py-1 text-xs font-semibold border transition-colors',
-                    freq === f ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:bg-muted')}>
-                  {FREQ_LABEL[f]}
-                </button>
-              ))}
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-sm flex items-center gap-2">
-              <ChevronDown className="h-4 w-4 text-primary" />คอลัมน์ ({columns.length})
-            </h3>
-            <Button variant="outline" size="sm" onClick={addColumn} className="gap-1.5">
-              <Plus className="h-3.5 w-3.5" /> เพิ่มคอลัมน์
-            </Button>
-          </div>
-          <div className="space-y-2">
-            {columns.map((col) => (
-              <div key={col.col_id} className="flex items-center gap-2 rounded-lg border bg-muted/30 p-3">
-                <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
-                <Input className="h-8 text-sm flex-1" value={col.label} onChange={(e) => updateColumn(col.col_id, 'label', e.target.value)} placeholder="ชื่อคอลัมน์" />
-                <select value={col.type} onChange={(e) => updateColumn(col.col_id, 'type', e.target.value as ChecksheetColumnType)}
-                  className="h-8 rounded-md border bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary">
-                  {(Object.keys(COL_TYPE_LABEL) as ChecksheetColumnType[]).map((t) => (
-                    <option key={t} value={t}>{COL_TYPE_LABEL[t]}</option>
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 bg-slate-100 dark:bg-slate-950">
+          <div className="max-w-4xl mx-auto space-y-5">
+            <Card className="p-5 space-y-4 bg-white dark:bg-card border border-slate-200/90 shadow-sm rounded-xl">
+              <h3 className="font-semibold text-sm flex items-center gap-2">
+                <ClipboardList className="h-4 w-4 text-primary" />ข้อมูลพื้นฐาน
+              </h3>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground mb-1 block">ชื่อเช็คชีท *</label>
+                  <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="เช่น ตรวจสอบเครื่องจักรรายวัน" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground mb-1 block">ประเภทเครื่องจักร</label>
+                  <Input value={machineType} onChange={(e) => setMachineType(e.target.value)} placeholder="เช่น Hydraulic Press" />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1 block">คำอธิบาย</label>
+                <textarea rows={2} value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="อธิบายวัตถุประสงค์..."
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-2 block">ความถี่</label>
+                <div className="flex flex-wrap gap-2">
+                  {(Object.keys(FREQ_LABEL) as ChecksheetTemplate['frequency'][]).map((f) => (
+                    <button key={f} onClick={() => setFreq(f)}
+                      className={cn('rounded-full px-3 py-1 text-xs font-semibold border transition-colors',
+                        freq === f ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:bg-muted')}>
+                      {FREQ_LABEL[f]}
+                    </button>
                   ))}
-                </select>
-                <select value={col.width ?? 'md'} onChange={(e) => updateColumn(col.col_id, 'width', e.target.value)}
-                  className="h-8 rounded-md border bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary">
-                  <option value="sm">แคบ</option>
-                  <option value="md">กลาง</option>
-                  <option value="lg">กว้าง</option>
-                </select>
-                <button onClick={() => removeColumn(col.col_id)} className="text-muted-foreground hover:text-destructive transition-colors">
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                </div>
               </div>
-            ))}
-          </div>
-        </Card>
+            </Card>
 
-        <Card className="p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-sm flex items-center gap-2">
-              <Check className="h-4 w-4 text-primary" />หัวข้อตรวจสอบ ({items.length})
-            </h3>
-            <Button variant="outline" size="sm" onClick={addItem} className="gap-1.5">
-              <Plus className="h-3.5 w-3.5" /> เพิ่มหัวข้อ
+            <Card className="p-5 space-y-3 bg-white dark:bg-card border border-slate-200/90 shadow-sm rounded-xl">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-sm flex items-center gap-2">
+                  <ChevronDown className="h-4 w-4 text-primary" />คอลัมน์ ({columns.length})
+                </h3>
+                <Button variant="outline" size="sm" onClick={addColumn} className="gap-1.5">
+                  <Plus className="h-3.5 w-3.5" /> เพิ่มคอลัมน์
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {columns.map((col) => (
+                  <div key={col.col_id} className="flex items-center gap-2 rounded-lg border bg-muted/30 p-3">
+                    <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <Input className="h-8 text-sm flex-1" value={col.label} onChange={(e) => updateColumn(col.col_id, 'label', e.target.value)} placeholder="ชื่อคอลัมน์" />
+                    <select value={col.type} onChange={(e) => updateColumn(col.col_id, 'type', e.target.value as ChecksheetColumnType)}
+                      className="h-8 rounded-md border bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary">
+                      {(Object.keys(COL_TYPE_LABEL) as ChecksheetColumnType[]).map((t) => (
+                        <option key={t} value={t}>{COL_TYPE_LABEL[t]}</option>
+                      ))}
+                    </select>
+                    <select value={col.width ?? 'md'} onChange={(e) => updateColumn(col.col_id, 'width', e.target.value)}
+                      className="h-8 rounded-md border bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary">
+                      <option value="sm">แคบ</option>
+                      <option value="md">กลาง</option>
+                      <option value="lg">กว้าง</option>
+                    </select>
+                    <button onClick={() => removeColumn(col.col_id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            <Card className="p-5 space-y-3 bg-white dark:bg-card border border-slate-200/90 shadow-sm rounded-xl">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-sm flex items-center gap-2">
+                  <Check className="h-4 w-4 text-primary" />หัวข้อตรวจสอบ ({items.length})
+                </h3>
+                <Button variant="outline" size="sm" onClick={addItem} className="gap-1.5">
+                  <Plus className="h-3.5 w-3.5" /> เพิ่มหัวข้อ
+                </Button>
+              </div>
+              {items.length === 0 && (
+                <p className="text-center text-muted-foreground text-sm py-4">ยังไม่มีหัวข้อ กด "เพิ่มหัวข้อ" เพื่อเริ่มต้น</p>
+              )}
+              <div className="space-y-2">
+                {items.map((item, idx) => (
+                  <div key={item.item_id} className="flex items-center gap-2 rounded-lg border bg-muted/30 p-3">
+                    <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="text-xs text-muted-foreground w-5 shrink-0 text-center">{idx + 1}</span>
+                    <Input className="h-8 text-sm flex-1" value={item.topic} onChange={(e) => updateItem(item.item_id, 'topic', e.target.value)} placeholder="ชื่อหัวข้อตรวจสอบ..." />
+                    <Input className="h-8 text-sm w-28" value={item.group ?? ''} onChange={(e) => updateItem(item.item_id, 'group', e.target.value)} placeholder="กลุ่ม..." />
+                    <button onClick={() => removeItem(item.item_id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+        </div>
+
+        <div className="sticky bottom-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200/80 px-4 py-3 shadow-sm shrink-0">
+          <div className="max-w-4xl mx-auto flex gap-3 w-full">
+            <Button variant="outline" className="flex-1" onClick={onClose}>ยกเลิก</Button>
+            <Button className="flex-1 bg-slate-800 hover:bg-slate-900 text-white font-medium" onClick={handleSave} disabled={!name.trim()}>
+              <Save className="h-4 w-4 mr-2" /> {isNew ? 'สร้าง Template' : 'บันทึกการเปลี่ยนแปลง'}
             </Button>
           </div>
-          {items.length === 0 && (
-            <p className="text-center text-muted-foreground text-sm py-4">ยังไม่มีหัวข้อ กด "เพิ่มหัวข้อ" เพื่อเริ่มต้น</p>
-          )}
-          <div className="space-y-2">
-            {items.map((item, idx) => (
-              <div key={item.item_id} className="flex items-center gap-2 rounded-lg border bg-muted/30 p-3">
-                <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span className="text-xs text-muted-foreground w-5 shrink-0 text-center">{idx + 1}</span>
-                <Input className="h-8 text-sm flex-1" value={item.topic} onChange={(e) => updateItem(item.item_id, 'topic', e.target.value)} placeholder="ชื่อหัวข้อตรวจสอบ..." />
-                <Input className="h-8 text-sm w-28" value={item.group ?? ''} onChange={(e) => updateItem(item.item_id, 'group', e.target.value)} placeholder="กลุ่ม..." />
-                <button onClick={() => removeItem(item.item_id)} className="text-muted-foreground hover:text-destructive transition-colors">
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-
-      <div className="sticky bottom-0 bg-background/90 backdrop-blur border-t px-4 py-3 flex gap-3 max-w-4xl mx-auto w-full">
-        <Button variant="outline" className="flex-1" onClick={onClose}>ยกเลิก</Button>
-        <Button className="flex-1 bg-slate-800 hover:bg-slate-900 text-white" onClick={handleSave} disabled={!name.trim()}>
-          <Save className="h-4 w-4 mr-2" /> {isNew ? 'สร้าง Template' : 'บันทึกการเปลี่ยนแปลง'}
-        </Button>
+        </div>
       </div>
     </div>
   );
@@ -517,28 +536,39 @@ export default function Checksheet({ embedded = false, onBack }: ChecksheetProps
           ))}
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-1 rounded-xl bg-muted p-1 w-fit">
-          {[
-            { key: 'templates', label: 'Template เช็คชีท', icon: <ClipboardList className="h-4 w-4" /> },
-            { key: 'records', label: 'ประวัติการกรอก', icon: <History className="h-4 w-4" /> },
-          ].map((t) => (
-            <button key={t.key} onClick={() => setActiveTab(t.key as 'templates' | 'records')}
-              className={cn('rounded-lg px-4 py-2 text-sm font-medium transition-all flex items-center gap-2',
-                activeTab === t.key ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground')}>
-              {t.icon}{t.label}
-            </button>
-          ))}
+        {/* Tabs & Action Header */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex gap-1 rounded-xl bg-muted p-1">
+            {[
+              { key: 'templates', label: 'Template', fullLabel: 'Template เช็คชีท', icon: <ClipboardList className="h-4 w-4 shrink-0" /> },
+              { key: 'records', label: 'ประวัติ', fullLabel: 'ประวัติการกรอก', icon: <History className="h-4 w-4 shrink-0" /> },
+            ].map((t) => (
+              <button key={t.key} onClick={() => setActiveTab(t.key as 'templates' | 'records')}
+                className={cn('rounded-lg px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap',
+                  activeTab === t.key ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground')}>
+                {t.icon}
+                <span className="hidden min-[400px]:inline">{t.fullLabel}</span>
+                <span className="min-[400px]:hidden">{t.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {activeTab === 'templates' && (
+            <Button
+              size="sm"
+              onClick={() => setEditTarget(null)}
+              className="gap-1.5 bg-slate-800 hover:bg-slate-900 text-white shrink-0 text-xs sm:text-sm font-semibold h-9 sm:h-10 px-3 sm:px-4 rounded-xl shadow-sm"
+            >
+              <Plus className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">สร้าง Template ใหม่</span>
+              <span className="sm:hidden">สร้าง Template</span>
+            </Button>
+          )}
         </div>
 
         {/* Templates Tab */}
         {activeTab === 'templates' && (
           <div className="space-y-4">
-            <div className="flex justify-end">
-              <Button onClick={() => setEditTarget(null)} className="gap-2 bg-slate-800 hover:bg-slate-900 text-white">
-                <Plus className="h-4 w-4" /> สร้าง Template ใหม่
-              </Button>
-            </div>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {templates.filter((t) => t.active).map((t) => {
                 const recCount = records.filter((r) => r.template_id === t.template_id).length;
@@ -631,11 +661,13 @@ export default function Checksheet({ embedded = false, onBack }: ChecksheetProps
             </div>
           </Card>
         )}
-      {fillTarget && (
-        <FillView template={fillTarget} onClose={() => setFillTarget(null)} onSubmit={handleSubmitRecord} />
+      {fillTarget && createPortal(
+        <FillView template={fillTarget} onClose={() => setFillTarget(null)} onSubmit={handleSubmitRecord} />,
+        document.body
       )}
-      {editTarget !== undefined && (
-        <TemplateEditor template={editTarget} onClose={() => setEditTarget(undefined)} onSave={handleSaveTemplate} />
+      {editTarget !== undefined && createPortal(
+        <TemplateEditor template={editTarget} onClose={() => setEditTarget(undefined)} onSave={handleSaveTemplate} />,
+        document.body
       )}
     </div>
   );
