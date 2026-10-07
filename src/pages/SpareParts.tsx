@@ -8,7 +8,6 @@ import {
   Search,
   X,
   History,
-  LogOut,
   LayoutDashboard,
   ShieldAlert,
   Filter,
@@ -841,14 +840,114 @@ export default function SpareParts({ embedded = false, onBack }: SparePartsProps
               </div>
             </div>
 
-            <Card className="overflow-hidden">
+            {/* ── Mobile View: Individual Spacious Cards (sm:hidden) ── */}
+            <div className="sm:hidden space-y-3">
+              {filtered.length === 0 ? (
+                <Card className="p-8 text-center text-muted-foreground rounded-2xl">
+                  <Package className="h-10 w-10 mx-auto mb-2 opacity-35 text-primary" />
+                  <p className="font-semibold text-sm text-foreground">ไม่พบรายการอะไหล่</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 mb-3">ลองเปลี่ยนคำค้นหา หรือลงทะเบียนอะไหล่ใหม่เข้าระบบ</p>
+                  <Button size="sm" variant="outline" onClick={() => setIsCreateModalOpen(true)} className="gap-1.5">
+                    <Plus className="h-3.5 w-3.5" /> เพิ่มอะไหล่ใหม่
+                  </Button>
+                </Card>
+              ) : (
+                filtered.map((p) => {
+                  const s = getStockStatus(p);
+                  const pct = stockPct(p);
+                  const barColor = s === "out" ? "bg-red-500" : s === "low" ? "bg-amber-500" : "bg-emerald-500";
+                  return (
+                    <Card
+                      key={p.part_id}
+                      className="p-4 space-y-3.5 border-l-4 shadow-xs hover:shadow-md transition-all rounded-2xl"
+                      style={{
+                        borderLeftColor: s === "out" ? "#ef4444" : s === "low" ? "#f59e0b" : "#10b981",
+                      }}
+                    >
+                      {/* Top: Badges & Stock Status */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-mono text-xs font-bold text-primary px-2.5 py-0.5 rounded-md bg-primary/10 border border-primary/20">
+                            {p.part_id}
+                          </span>
+                          <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground border">
+                            {SPARE_PART_CATEGORY_LABEL[p.category]}
+                          </span>
+                        </div>
+                        <StockBadge status={s} />
+                      </div>
+
+                      {/* Name & Details */}
+                      <div>
+                        <h4 className="font-bold text-base text-foreground leading-snug">{p.name}</h4>
+                        <div className="flex items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1.5 flex-wrap">
+                          {p.location && (
+                            <span className="inline-flex items-center gap-1 text-slate-700 dark:text-slate-300 font-medium">
+                              <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                              ที่เก็บ: {p.location}
+                            </span>
+                          )}
+                          <span>ผู้จำหน่าย: <strong className="text-foreground/80 font-medium">{p.supplier}</strong></span>
+                        </div>
+                      </div>
+
+                      {/* Stock Level Box */}
+                      <div className="bg-slate-50 dark:bg-slate-900/40 rounded-xl p-3 space-y-2 border border-slate-200/70 dark:border-slate-800">
+                        <div className="flex items-baseline justify-between">
+                          <span className="text-xs text-muted-foreground font-medium">สต็อกคงเหลือ:</span>
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="font-bold text-xl tabular-nums text-foreground">{p.stock}</span>
+                            <span className="text-xs font-medium text-muted-foreground">{p.unit}</span>
+                            <span className="text-xs text-muted-foreground/80">/ {p.max_stock} {p.unit}</span>
+                          </div>
+                        </div>
+                        <div className="h-2 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                          <div className={cn("h-full rounded-full transition-all duration-500", barColor)} style={{ width: `${pct}%` }} />
+                        </div>
+                        <div className="flex justify-between items-center text-[11px] text-muted-foreground">
+                          <span>จุดสั่งซื้อต่ำสุด (Min): <strong>{p.min_stock} {p.unit}</strong></span>
+                          <span className="font-semibold text-foreground/90">{pct}%</span>
+                        </div>
+                      </div>
+
+                      {/* Price & Touch-Friendly Actions */}
+                      <div className="flex items-center justify-between gap-3 pt-1 border-t border-border/40">
+                        <div className="text-xs">
+                          <span className="text-muted-foreground">ราคา: </span>
+                          <span className="font-mono font-bold text-sm text-foreground">฿{formatPrice(p.unit_price)}</span>
+                          <span className="text-muted-foreground text-[11px]"> /{p.unit}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setModal({ part: p, mode: "issue" })}
+                            disabled={p.stock === 0}
+                            className="rounded-xl border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 disabled:opacity-40 disabled:cursor-not-allowed px-3.5 py-2 text-xs font-bold transition-all flex items-center gap-1.5 min-h-[38px] active:scale-95 shadow-2xs"
+                          >
+                            <ArrowUpFromLine className="h-4 w-4" /> เบิกอะไหล่
+                          </button>
+                          <button
+                            onClick={() => setModal({ part: p, mode: "receive" })}
+                            className="rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-3.5 py-2 text-xs font-bold transition-all flex items-center gap-1.5 min-h-[38px] active:scale-95 shadow-2xs"
+                          >
+                            <ArrowDownToLine className="h-4 w-4" /> รับเข้าสต็อก
+                          </button>
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })
+              )}
+            </div>
+
+            {/* ── Desktop/Tablet View: Table Card (hidden sm:block) ── */}
+            <Card className="hidden sm:block overflow-hidden shadow-xs">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm min-w-[720px]">
                   <thead>
                     <tr className="border-b bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
-                      <th className="px-4 py-3 text-left font-medium">รหัส / ชื่ออะไหล่</th>
-                      <th className="px-4 py-3 text-left font-medium hidden sm:table-cell">หมวดหมู่</th>
-                      <th className="px-4 py-3 text-left font-medium">Stock / กราฟ</th>
+                      <th className="px-4 py-3 text-left font-medium min-w-[180px]">รหัส / ชื่ออะไหล่</th>
+                      <th className="px-4 py-3 text-left font-medium">หมวดหมู่</th>
+                      <th className="px-4 py-3 text-left font-medium min-w-[150px]">Stock / กราฟ</th>
                       <th className="px-4 py-3 text-left font-medium hidden md:table-cell">ตำแหน่ง</th>
                       <th className="px-4 py-3 text-left font-medium hidden lg:table-cell">ราคา/หน่วย</th>
                       <th className="px-4 py-3 text-left font-medium">สถานะ</th>
@@ -874,15 +973,15 @@ export default function SpareParts({ embedded = false, onBack }: SparePartsProps
                         const barColor = s === "out" ? "bg-red-400" : s === "low" ? "bg-amber-400" : "bg-emerald-400";
                         return (
                           <tr key={p.part_id} className={cn("border-b last:border-0 transition-colors hover:bg-muted/30", i % 2 !== 0 && "bg-muted/10")}>
-                            <td className="px-4 py-3">
+                            <td className="px-4 py-3 min-w-[180px]">
                               <p className="font-mono text-xs text-primary">{p.part_id}</p>
                               <p className="font-medium text-sm leading-tight mt-0.5">{p.name}</p>
                               <p className="text-xs text-muted-foreground">{p.supplier}</p>
                             </td>
-                            <td className="px-4 py-3 hidden sm:table-cell">
+                            <td className="px-4 py-3">
                               <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium">{SPARE_PART_CATEGORY_LABEL[p.category]}</span>
                             </td>
-                            <td className="px-4 py-3 min-w-[140px]">
+                            <td className="px-4 py-3 min-w-[150px]">
                               <div className="flex items-baseline gap-1.5 mb-1.5">
                                 <span className="font-bold text-base tabular-nums">{p.stock}</span>
                                 <span className="text-xs text-muted-foreground">{p.unit}</span>
@@ -1026,9 +1125,6 @@ export default function SpareParts({ embedded = false, onBack }: SparePartsProps
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10" onClick={() => navigate("/admin/dashboard")} aria-label="Dashboard">
               <LayoutDashboard className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10" onClick={() => navigate("/")} aria-label="ออกจากระบบ">
-              <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </div>

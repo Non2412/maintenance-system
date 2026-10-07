@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Filter, LayoutGrid, List, LogOut, Search, Wrench } from "lucide-react";
+import { Bell, Filter, LayoutGrid, List, Search, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -226,9 +226,6 @@ export default function TechnicianBoard() {
           <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10 relative">
             <Bell className="h-5 w-5" />
             {counts.critical > 0 && <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-priority-critical priority-pulse" />}
-          </Button>
-          <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10" onClick={() => navigate("/")} aria-label="ออกจากระบบ">
-            <LogOut className="h-5 w-5" />
           </Button>
         </div>
       </header>

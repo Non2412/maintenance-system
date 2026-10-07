@@ -29,7 +29,6 @@ import {
   Gauge,
   ImagePlus,
   History,
-  LogOut,
   PencilLine,
   MapPin,
   Paperclip,
@@ -719,15 +718,6 @@ const RequestForm = () => {
                 {Math.min(myRequests.length, 99)}
               </span>
             )}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-primary-foreground hover:bg-white/10"
-            onClick={() => navigate("/")}
-            aria-label="ออกจากระบบ"
-          >
-            <LogOut className="h-5 w-5" />
           </Button>
         </div>
       </header>

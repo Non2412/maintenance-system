@@ -5,6 +5,8 @@ import AdminDashboard from "../pages/AdminDashboard";
 import TechnicianHistory from "../pages/TechnicianHistory";
 import TechnicianDetail from "../pages/TechnicianDetail";
 import SpareParts from "../pages/SpareParts";
+import SuperadminDashboard from "../pages/SuperadminDashboard";
+import AssignWorkModal from "../components/superadmin/AssignWorkModal";
 
 describe("Admin routes rendering", () => {
   it("renders /admin/technician-history without crashing", () => {
@@ -97,5 +99,86 @@ describe("Admin routes rendering", () => {
       </MemoryRouter>
     );
     expect(container).toBeTruthy();
+  });
+
+  it("renders /admin/dashboard?tab=team with TeamSection without crashing", () => {
+    const { getByText, getAllByText } = render(
+      <MemoryRouter initialEntries={["/admin/dashboard?tab=team"]}>
+        <Routes>
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    expect(getAllByText("ทีมช่าง").length).toBeGreaterThanOrEqual(1);
+    expect(getByText("รายละเอียดช่าง (แสดง 10 คนแรก)")).toBeTruthy();
+  });
+
+  it("renders TechnicianDetail TECH004 with full name and correct stats", () => {
+    const { getByText, getAllByText } = render(
+      <MemoryRouter initialEntries={["/admin/technician/TECH004"]}>
+        <Routes>
+          <Route path="/admin/technician/:id" element={<TechnicianDetail />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    expect(getByText("อานนท์ ใจดี")).toBeTruthy();
+    expect(getByText("6 งาน")).toBeTruthy();
+    expect(getAllByText("081-234-5678").length).toBeGreaterThanOrEqual(1);
+    expect(getAllByText("anont@company.com").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("renders TechnicianDetail TECH002 (วิษณุ ช่างกล) full name without truncation", () => {
+    const { getByText } = render(
+      <MemoryRouter initialEntries={["/admin/technician/TECH002"]}>
+        <Routes>
+          <Route path="/admin/technician/:id" element={<TechnicianDetail />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    expect(getByText("วิษณุ ช่างกล")).toBeTruthy();
+  });
+
+  it("renders SuperadminDashboard tab=dispatch without crashing", () => {
+    const { getByText, getAllByText } = render(
+      <MemoryRouter initialEntries={["/superadmin/dashboard?tab=dispatch"]}>
+        <Routes>
+          <Route path="/superadmin/dashboard" element={<SuperadminDashboard />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    expect(getAllByText("ศูนย์จ่ายงานและมอบหมายช่าง (Job Dispatch Center)").length).toBeGreaterThanOrEqual(1);
+    expect(getAllByText("คิวงานที่รอมอบหมาย (Dispatch Queue)").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("renders AssignWorkModal with job and technician recommendations", () => {
+    const mockRequest = {
+      request_id: "REQ-TEST-001",
+      asset_name: "MCH-PUMP-01",
+      asset_location: "Building A",
+      issue_summary: "มอเตอร์ไฟฟ้าตัดการทำงาน",
+      priority: "high" as const,
+      status: "open" as const,
+      sub_status: "reported" as const,
+      reported_time: new Date().toISOString(),
+      reported_by: "ทดสอบ ผู้แจ้ง",
+      category: "electrical" as const,
+      attachments: [],
+      status_timeline: [],
+      requester_notifications: [],
+    };
+
+    const { getByText, getAllByText } = render(
+      <AssignWorkModal
+        isOpen={true}
+        onClose={() => {}}
+        request={mockRequest}
+        onConfirm={() => {}}
+      />
+    );
+
+    expect(getByText("มอบหมายงานซ่อมบำรุง (Work Order Dispatch)")).toBeTruthy();
+    expect(getByText("REQ-TEST-001")).toBeTruthy();
+    expect(getByText("มอเตอร์ไฟฟ้าตัดการทำงาน")).toBeTruthy();
+    expect(getAllByText("สมศักดิ์ ช่างไฟ").length).toBeGreaterThanOrEqual(1);
   });
 });

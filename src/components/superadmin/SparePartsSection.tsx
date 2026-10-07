@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import {
   Package, Search, Filter, Plus, Edit2, AlertTriangle, ArrowUpDown,
   Boxes, DollarSign, History, Check, X, RotateCcw, TrendingDown
@@ -180,7 +181,7 @@ export function SparePartsSection() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold flex items-center gap-2">
-            <Package className="h-6 w-6 text-purple-600" />
+            <Package className="h-6 w-6 text-primary" />
             จัดการอะไหล่ & ปรับยอดสต็อก (Spare Parts Master & Stock Adjustment)
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
@@ -188,7 +189,7 @@ export function SparePartsSection() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={openAddModal} className="bg-purple-600 hover:bg-purple-700 text-white text-xs">
+          <Button onClick={openAddModal} className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs">
             <Plus className="h-4 w-4 mr-1" /> เพิ่มอะไหล่ใหม่
           </Button>
           <Button
@@ -366,7 +367,7 @@ export function SparePartsSection() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-8 px-2 text-xs text-purple-700 hover:bg-purple-50 border-purple-200"
+                            className="h-8 px-2 text-xs font-medium text-primary hover:text-primary hover:bg-primary/10 border-primary/20"
                             onClick={() => {
                               setAdjustModalPart(part);
                               setAdjustType("add");
@@ -399,13 +400,19 @@ export function SparePartsSection() {
       </Card>
 
       {/* ── Modal 1: Stock Adjustment Modal ── */}
-      {adjustModalPart && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <Card className="w-full max-w-md p-6 bg-background space-y-4 shadow-2xl animate-in fade-in zoom-in-95">
+      {adjustModalPart && typeof document !== "undefined" && createPortal(
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setAdjustModalPart(null)}
+        >
+          <Card
+            className="w-full max-w-md p-6 bg-background space-y-4 shadow-2xl animate-in fade-in zoom-in-95 cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="font-bold text-lg flex items-center gap-2">
-                  <ArrowUpDown className="h-5 w-5 text-purple-600" />
+                  <ArrowUpDown className="h-5 w-5 text-primary" />
                   ปรับยอดสต็อก (Stock Override)
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -501,23 +508,30 @@ export function SparePartsSection() {
                 <Button type="button" variant="outline" onClick={() => setAdjustModalPart(null)}>
                   ยกเลิก
                 </Button>
-                <Button type="submit" className="bg-purple-600 hover:bg-purple-700 text-white">
+                <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground">
                   ยืนยันปรับสต็อก
                 </Button>
               </div>
             </form>
           </Card>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ── Modal 2: Add/Edit Master Data Modal ── */}
-      {editModalPart && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <Card className="w-full max-w-lg p-6 bg-background space-y-4 shadow-2xl animate-in fade-in zoom-in-95">
+      {editModalPart && typeof document !== "undefined" && createPortal(
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setEditModalPart(null)}
+        >
+          <Card
+            className="w-full max-w-lg p-6 bg-background space-y-4 shadow-2xl animate-in fade-in zoom-in-95 cursor-default max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-start justify-between border-b pb-3">
               <div>
                 <h3 className="font-bold text-lg flex items-center gap-2">
-                  <Package className="h-5 w-5 text-purple-600" />
+                  <Package className="h-5 w-5 text-primary" />
                   {isAddMode ? "เพิ่มอะไหล่ใหม่ (Add Master Part)" : "แก้ไขข้อมูลอะไหล่ (Edit Master)"}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -643,13 +657,14 @@ export function SparePartsSection() {
                 <Button type="button" variant="outline" onClick={() => setEditModalPart(null)}>
                   ยกเลิก
                 </Button>
-                <Button type="submit" className="bg-purple-600 hover:bg-purple-700 text-white">
+                <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground">
                   {isAddMode ? "บันทึกอะไหล่ใหม่" : "บันทึกการแก้ไข"}
                 </Button>
               </div>
             </form>
           </Card>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Package, LogOut, LayoutDashboard, AlertTriangle,
+  Package, LayoutDashboard, AlertTriangle,
   CheckCircle2, XCircle, Clock, Filter, Search,
   ChevronRight, ExternalLink, Wrench, ShoppingCart,
   ArrowLeft,
@@ -421,9 +421,6 @@ export default function AdminSpareRequests({ embedded = false }: AdminSpareReque
                   </span>
                 )}
               </div>
-              <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10" onClick={() => navigate("/")}>
-                <LogOut className="h-5 w-5" />
-              </Button>
             </div>
           </header>
           <main className="flex-1 p-4 sm:p-6 space-y-6 max-w-7xl mx-auto w-full">

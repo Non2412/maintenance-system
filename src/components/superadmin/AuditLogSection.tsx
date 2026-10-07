@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import {
   FileText, Search, Filter, Download, RotateCcw, Shield, Eye,
   Clock, User, CheckCircle2, AlertTriangle, Activity
@@ -21,7 +22,7 @@ const ACTION_BADGE: Record<AuditAction, { bg: string; text: string; border: stri
   CREATE:       { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
   UPDATE:       { bg: "bg-cyan-50",   text: "text-cyan-700",   border: "border-cyan-200" },
   DELETE:       { bg: "bg-red-50",    text: "text-red-700",    border: "border-red-200" },
-  OVERRIDE:     { bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200" },
+  OVERRIDE:     { bg: "bg-slate-100",  text: "text-slate-800",   border: "border-slate-300" },
   APPROVE:      { bg: "bg-teal-50",   text: "text-teal-700",   border: "border-teal-200" },
   REJECT:       { bg: "bg-rose-50",   text: "text-rose-700",   border: "border-rose-200" },
   STOCK_ADJUST: { bg: "bg-amber-50",  text: "text-amber-700",  border: "border-amber-200" },
@@ -84,7 +85,7 @@ export function AuditLogSection() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold flex items-center gap-2">
-            <FileText className="h-6 w-6 text-purple-600" />
+            <FileText className="h-6 w-6 text-primary" />
             ประวัติการเปลี่ยนแปลงระบบ (System Audit Log & Activity Trail)
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
@@ -236,9 +237,15 @@ export function AuditLogSection() {
       </Card>
 
       {/* ── Detail Payload Modal ── */}
-      {detailModalLog && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <Card className="w-full max-w-lg p-6 bg-background space-y-4 shadow-2xl animate-in fade-in zoom-in-95">
+      {detailModalLog && typeof document !== "undefined" && createPortal(
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setDetailModalLog(null)}
+        >
+          <Card
+            className="w-full max-w-lg p-6 bg-background space-y-4 shadow-2xl animate-in fade-in zoom-in-95 cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-start justify-between border-b pb-3">
               <div>
                 <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-primary/10 text-primary">
@@ -287,7 +294,8 @@ export function AuditLogSection() {
               </Button>
             </div>
           </Card>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

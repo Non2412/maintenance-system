@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import {
   Wrench, Search, Filter, ShieldAlert, CheckCircle2, Clock, AlertTriangle,
   UserCheck, RotateCcw, XCircle, Eye, ArrowRight, Check, Sparkles, Building2
@@ -18,6 +19,8 @@ import {
   timeAgo,
 } from "@/lib/mockData";
 import { toast } from "sonner";
+import AssignWorkModal, { AssignWorkPayload } from "./AssignWorkModal";
+import DispatchSection from "./DispatchSection";
 
 const STATUS_BADGE: Record<string, { bg: string; text: string; border: string }> = {
   open:     { bg: "bg-blue-50",   text: "text-blue-700",   border: "border-blue-200" },
@@ -39,6 +42,7 @@ const PRIORITY_BADGE: Record<string, { bg: string; text: string; dot: string }> 
 };
 
 export function WorkRequestsSection() {
+  const [viewMode, setViewMode] = useState<"table" | "dispatch">("table");
   const [requests, setRequests] = useState<WorkRequest[]>(() => [...MOCK_REQUESTS]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -46,7 +50,6 @@ export function WorkRequestsSection() {
 
   // Modal states
   const [assignModalReq, setAssignModalReq] = useState<WorkRequest | null>(null);
-  const [selectedTech, setSelectedTech] = useState<string>("");
   const [overrideModalReq, setOverrideModalReq] = useState<WorkRequest | null>(null);
   const [newStatus, setNewStatus] = useState<string>("");
   const [newPriority, setNewPriority] = useState<string>("");
@@ -80,25 +83,25 @@ export function WorkRequestsSection() {
     return { total, critical, active, completed };
   }, [requests]);
 
-  // Force Assign
-  const handleAssignSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!assignModalReq || !selectedTech) return;
-    const techName = TECHNICIAN_MAP[selectedTech]?.name ?? selectedTech;
+  // Confirm Assignment
+  const handleAssignConfirm = (payload: AssignWorkPayload) => {
     setRequests((prev) =>
       prev.map((r) =>
-        r.request_id === assignModalReq.request_id
+        r.request_id === payload.requestId
           ? {
               ...r,
-              assigned_to: selectedTech,
-              status: r.status === "open" ? "doing" : r.status,
+              assigned_to: payload.technicianId,
+              status: payload.autoStart ? "doing" : r.status === "open" ? "doing" : r.status,
             }
           : r
       )
     );
-    toast.success(`มอบหมายงาน ${assignModalReq.request_id} ให้ช่าง ${techName} สำเร็จ (Superadmin Override)`);
+    toast.success(
+      `มอบหมายงาน ${payload.requestId} ให้ช่าง ${payload.technicianName} สำเร็จ (${
+        payload.scheduleType === "urgent" ? "เริ่มทันที" : `นัดหมาย ${payload.scheduledDate}`
+      })`
+    );
     setAssignModalReq(null);
-    setSelectedTech("");
   };
 
   // Override Status & Priority
@@ -130,20 +133,56 @@ export function WorkRequestsSection() {
     setCancelReason("");
   };
 
+  // If view mode is dispatch board
+  if (viewMode === "dispatch") {
+    return (
+      <DispatchSection
+        onNavigateToWorkOrders={() => setViewMode("table")}
+        onSwitchToTableView={() => setViewMode("table")}
+        totalRequestsCount={requests.length}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* ── Top Header & Stats ── */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold flex items-center gap-2">
-            <Wrench className="h-6 w-6 text-purple-600" />
+            <Wrench className="h-6 w-6 text-primary" />
             จัดการงานซ่อมบำรุงทั้งหมด (Work Request Management)
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             สิทธิ์ Superadmin: บังคับมอบหมายงาน (Force Assign), ปรับเปลี่ยนสถานะ/ความสำคัญ, ยกเลิกงานซ่อม
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* View Mode Toggle (ตำแหน่งเดิม) */}
+          <div className="flex items-center gap-1 p-1 bg-muted/60 rounded-lg border border-border">
+            <button
+              type="button"
+              onClick={() => setViewMode("table")}
+              className="px-3 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5 bg-background text-foreground shadow-xs"
+            >
+              <Wrench className="h-3.5 w-3.5" />
+              ตารางงานซ่อมทั้งหมด ({requests.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("dispatch")}
+              className="px-3 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
+            >
+              <UserCheck className="h-3.5 w-3.5 text-blue-600" />
+              หน้ากระดานมอบหมายงาน
+              {requests.filter((r) => !r.assigned_to || r.status === "open").length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500 text-white">
+                  {requests.filter((r) => !r.assigned_to || r.status === "open").length}
+                </span>
+              )}
+            </button>
+          </div>
+
           <Button
             variant="outline"
             size="sm"
@@ -324,12 +363,9 @@ export function WorkRequestsSection() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-8 px-2 text-xs text-blue-700 hover:bg-blue-50 border-blue-200"
-                            onClick={() => {
-                              setAssignModalReq(req);
-                              setSelectedTech(req.assigned_to || "");
-                            }}
-                            title="บังคับมอบหมายงานให้ช่าง"
+                            className="h-8 px-2 text-xs font-medium text-blue-700 hover:text-blue-800 hover:bg-blue-100/70 border-blue-200"
+                            onClick={() => setAssignModalReq(req)}
+                            title="มอบหมายงานให้ช่าง"
                           >
                             <UserCheck className="h-3.5 w-3.5 mr-1" />
                             {req.assigned_to ? "เปลี่ยนช่าง" : "มอบหมาย"}
@@ -339,7 +375,7 @@ export function WorkRequestsSection() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-8 px-2 text-xs text-purple-700 hover:bg-purple-50 border-purple-200"
+                            className="h-8 px-2 text-xs font-medium text-primary hover:text-primary hover:bg-primary/10 border-primary/20"
                             onClick={() => {
                               setOverrideModalReq(req);
                               setNewStatus(req.status);
@@ -355,7 +391,7 @@ export function WorkRequestsSection() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-8 px-2 text-xs text-red-600 hover:bg-red-50 border-red-200"
+                            className="h-8 px-2 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-100/70 border-red-200"
                             onClick={() => setCancelModalReq(req)}
                             title="ยกเลิกงานซ่อม"
                           >
@@ -383,92 +419,28 @@ export function WorkRequestsSection() {
         </div>
       </Card>
 
-      {/* ── Modal 1: Force Assign Modal ── */}
-      {assignModalReq && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <Card className="w-full max-w-md p-6 bg-background space-y-4 shadow-2xl animate-in fade-in zoom-in-95">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="font-bold text-lg flex items-center gap-2">
-                  <UserCheck className="h-5 w-5 text-blue-600" />
-                  บังคับมอบหมายงาน (Force Assign)
-                </h3>
-                <p className="text-xs text-muted-foreground mt-0.5 font-mono">
-                  {assignModalReq.request_id}: {assignModalReq.issue_summary}
-                </p>
-              </div>
-              <button
-                onClick={() => setAssignModalReq(null)}
-                className="text-muted-foreground hover:text-foreground text-sm"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleAssignSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label>เลือกช่างซ่อมบำรุง</Label>
-                <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
-                  {Object.entries(TECHNICIAN_MAP).map(([techId, tech]) => {
-                    const isSelected = selectedTech === techId;
-                    return (
-                      <div
-                        key={techId}
-                        onClick={() => setSelectedTech(techId)}
-                        className={cn(
-                          "flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all",
-                          isSelected
-                            ? "border-primary bg-primary/5 ring-1 ring-primary"
-                            : "hover:bg-muted/50 border-border"
-                        )}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-700 font-bold text-xs grid place-items-center">
-                            {tech.name.charAt(0)}
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold leading-tight">{tech.name}</p>
-                            <p className="text-xs text-muted-foreground">รหัส: {tech.technician_id}</p>
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-1 max-w-[120px] justify-end">
-                          {tech.skills.map((s) => (
-                            <span key={s} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono">
-                              {s}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="p-3 bg-muted/60 rounded-lg text-xs text-muted-foreground">
-                ℹ️ <strong>หมายเหตุ:</strong> การ Force Assign โดย Superadmin จะข้ามขั้นตอนรับงานปกติ และเปลี่ยนสถานะงานเป็น "กำลังดำเนินการ (Doing)" ให้ทันที
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <Button type="button" variant="outline" onClick={() => setAssignModalReq(null)}>
-                  ยกเลิก
-                </Button>
-                <Button type="submit" disabled={!selectedTech} className="bg-blue-600 hover:bg-blue-700 text-white">
-                  ยืนยันมอบหมายงาน
-                </Button>
-              </div>
-            </form>
-          </Card>
-        </div>
-      )}
+      {/* ── Modal 1: Assign Work Modal (Enterprise Draft) ── */}
+      <AssignWorkModal
+        isOpen={Boolean(assignModalReq)}
+        onClose={() => setAssignModalReq(null)}
+        request={assignModalReq}
+        onConfirm={handleAssignConfirm}
+      />
 
       {/* ── Modal 2: Override Status & Priority Modal ── */}
-      {overrideModalReq && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <Card className="w-full max-w-md p-6 bg-background space-y-4 shadow-2xl animate-in fade-in zoom-in-95">
+      {overrideModalReq && typeof document !== "undefined" && createPortal(
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setOverrideModalReq(null)}
+        >
+          <Card
+            className="w-full max-w-md p-6 bg-background space-y-4 shadow-2xl animate-in fade-in zoom-in-95 cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="font-bold text-lg flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-purple-600" />
+                  <Sparkles className="h-5 w-5 text-primary" />
                   ปรับเปลี่ยนสถานะ / ความสำคัญ (Override)
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5 font-mono">
@@ -523,19 +495,26 @@ export function WorkRequestsSection() {
                 <Button type="button" variant="outline" onClick={() => setOverrideModalReq(null)}>
                   ยกเลิก
                 </Button>
-                <Button type="submit" className="bg-purple-600 hover:bg-purple-700 text-white">
+                <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground">
                   บันทึกการเปลี่ยนแปลง
                 </Button>
               </div>
             </form>
           </Card>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ── Modal 3: Cancel Work Request Modal ── */}
-      {cancelModalReq && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <Card className="w-full max-w-md p-6 bg-background space-y-4 shadow-2xl animate-in fade-in zoom-in-95">
+      {cancelModalReq && typeof document !== "undefined" && createPortal(
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setCancelModalReq(null)}
+        >
+          <Card
+            className="w-full max-w-md p-6 bg-background space-y-4 shadow-2xl animate-in fade-in zoom-in-95 cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="font-bold text-lg text-red-600 flex items-center gap-2">
@@ -577,13 +556,20 @@ export function WorkRequestsSection() {
               </div>
             </form>
           </Card>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ── Modal 4: Detail Modal ── */}
-      {detailModalReq && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <Card className="w-full max-w-lg p-6 bg-background space-y-4 shadow-2xl animate-in fade-in zoom-in-95">
+      {detailModalReq && typeof document !== "undefined" && createPortal(
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setDetailModalReq(null)}
+        >
+          <Card
+            className="w-full max-w-lg p-6 bg-background space-y-4 shadow-2xl animate-in fade-in zoom-in-95 cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-start justify-between border-b pb-3">
               <div>
                 <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-primary/10 text-primary">
@@ -637,7 +623,8 @@ export function WorkRequestsSection() {
               </Button>
             </div>
           </Card>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

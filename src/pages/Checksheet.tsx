@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
   ClipboardList, Plus, Pencil, Trash2, Play, History,
-  Check, X, Flag, LogOut, LayoutDashboard, Save,
+  Check, X, Flag, LayoutDashboard, Save,
   CheckCircle2, GripVertical, ChevronDown, ArrowLeft,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -715,10 +715,6 @@ export default function Checksheet({ embedded = false, onBack }: ChecksheetProps
             <Button variant="ghost" size="icon" className="text-white hover:bg-white/10"
               onClick={() => navigate('/admin/dashboard')} aria-label="Dashboard">
               <LayoutDashboard className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10"
-              onClick={() => navigate('/')} aria-label="ออกจากระบบ">
-              <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </div>

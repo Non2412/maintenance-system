@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
-  ArrowLeft, LogOut, Clock, CheckCircle2, XCircle,
+  ArrowLeft, Clock, CheckCircle2, XCircle,
   AlertTriangle, Wrench, MapPin, User, Calendar,
   FileText, ExternalLink, Printer, Plus, Check,
   AlertCircle, ShieldCheck, ChevronRight, PenTool,
@@ -40,6 +40,20 @@ const STATUS_ICONS: Record<QCCellStatus, { symbol: string; label: string; cls: s
 export default function QCRecordDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleBack = () => {
+    const from = (location.state as { from?: string } | null)?.from;
+    if (from === "templates") {
+      navigate("/qc/dashboard?tab=templates");
+    } else if (from === "schedule") {
+      navigate("/qc/dashboard?tab=schedule");
+    } else if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/qc/dashboard");
+    }
+  };
 
   // Schedule lookup
   const schedule = id ? MOCK_QC_SCHEDULES.find((s) => s.schedule_id === id) : undefined;
@@ -89,7 +103,7 @@ export default function QCRecordDetail() {
         <AlertTriangle className="h-12 w-12 text-amber-500" />
         <p className="text-lg font-semibold">ไม่พบบันทึก QC หรือไม่พบรูปแบบเอกสาร</p>
         <p className="text-sm text-muted-foreground text-center">Schedule ID: {id}</p>
-        <Button onClick={() => navigate("/qc/dashboard")}>กลับ QC Dashboard</Button>
+        <Button onClick={handleBack}>กลับ QC Dashboard</Button>
       </div>
     );
   }
@@ -303,7 +317,7 @@ export default function QCRecordDetail() {
               variant="ghost"
               size="icon"
               className="text-primary-foreground hover:bg-white/10 shrink-0 h-8 w-8 sm:h-9 sm:w-9"
-              onClick={() => navigate("/qc/dashboard")}
+              onClick={handleBack}
             >
               <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
@@ -339,15 +353,6 @@ export default function QCRecordDetail() {
             >
               <Printer className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
               <span>พิมพ์</span><span className="hidden sm:inline">เอกสาร</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-primary-foreground hover:bg-white/10 h-8 w-8 sm:h-9 sm:w-9 shrink-0"
-              onClick={() => navigate("/")}
-              title="ออกจากระบบ"
-            >
-              <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
           </div>
         </div>

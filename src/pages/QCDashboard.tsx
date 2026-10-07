@@ -1,12 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import {
   ClipboardCheck, LogOut, Plus, Calendar, Clock, CheckCircle2,
   AlertTriangle, XCircle, ChevronRight, User, Filter, Search,
   ArrowLeft, MapPin, BarChart3, Activity, ExternalLink, Wrench,
   FileSpreadsheet, Sparkles, Layers, Sliders, Trash2, Eye, PenTool,
-  Check, FileText, CheckSquare, Settings2, Menu, X, LayoutDashboard,
-  ShieldCheck, Package
+  Check, FileText, CheckSquare, Settings2, Menu, X,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -707,6 +706,21 @@ function ScheduleDetailDrawer({
 
 export default function QCDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Tab determination logic: URL search param > location state > default "schedule"
+  const getInitialTab = (): "schedule" | "templates" | "stats" => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam === "templates" || tabParam === "stats" || tabParam === "schedule") {
+      return tabParam;
+    }
+    const stateTab = (location.state as { from?: string } | null)?.from;
+    if (stateTab === "templates" || stateTab === "stats" || stateTab === "schedule") {
+      return stateTab;
+    }
+    return "schedule";
+  };
 
   // Sidebar toggle state for mobile
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -714,10 +728,29 @@ export default function QCDashboard() {
   // Data State
   const [schedules, setSchedules] = useState<QCSchedule[]>(MOCK_QC_SCHEDULES);
   const [matrixTemplates, setMatrixTemplates] = useState<QCMatrixTemplate[]>(MOCK_QC_MATRIX_TEMPLATES);
-  const [activeNav, setActiveNav] = useState<"schedule" | "templates" | "stats">("schedule");
+  const [activeNav, setActiveNav] = useState<"schedule" | "templates" | "stats">(getInitialTab);
   const [showNewSchedule, setShowNewSchedule] = useState(false);
   const [showCreateTemplate, setShowCreateTemplate] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState<QCSchedule | null>(null);
+
+  // Sync tab if URL param or navigation state updates
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam === "templates" || tabParam === "stats" || tabParam === "schedule") {
+      setActiveNav(tabParam);
+    } else {
+      const stateTab = (location.state as { from?: string } | null)?.from;
+      if (stateTab === "templates" || stateTab === "stats" || stateTab === "schedule") {
+        setActiveNav(stateTab);
+      }
+    }
+  }, [searchParams, location.state]);
+
+  const handleNavSelect = (key: "schedule" | "templates" | "stats") => {
+    setActiveNav(key);
+    setSearchParams({ tab: key }, { replace: true });
+    setSidebarOpen(false);
+  };
 
   // Filters
   const [search, setSearch] = useState("");
@@ -789,7 +822,7 @@ export default function QCDashboard() {
   ];
 
   return (
-    <div className="h-screen flex flex-col bg-background text-slate-800 overflow-hidden">
+    <div className="fixed inset-0 flex flex-col bg-background text-slate-800 overflow-hidden">
       {/* ─── Topbar ────────────────────────────────────────────────────────── */}
       <header className="shrink-0 z-30 bg-gradient-primary text-primary-foreground shadow-md">
         <div className="px-4 py-3 flex items-center justify-between gap-3">
@@ -832,14 +865,6 @@ export default function QCDashboard() {
               onClick={() => setShowNewSchedule(true)}
             >
               <Plus className="h-4 w-4" /> สร้างกำหนดการ
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-primary-foreground hover:bg-white/10"
-              onClick={() => navigate("/")}
-            >
-              <LogOut className="h-5 w-5" />
             </Button>
           </div>
         </div>
@@ -894,10 +919,7 @@ export default function QCDashboard() {
               return (
                 <button
                   key={item.key}
-                  onClick={() => {
-                    setActiveNav(item.key);
-                    setSidebarOpen(false);
-                  }}
+                  onClick={() => handleNavSelect(item.key)}
                   className={cn(
                     "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150",
                     isActive
@@ -932,33 +954,6 @@ export default function QCDashboard() {
                 </button>
               );
             })}
-
-            <div className="pt-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-sidebar-foreground/40 px-3 py-2">
-                ระบบอื่น ๆ ในโรงงาน
-              </p>
-              <button
-                onClick={() => navigate("/board")}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm"
-              >
-                <Wrench className="h-4 w-4" />
-                <span>กระดานช่างซ่อม</span>
-              </button>
-              <button
-                onClick={() => navigate("/spare-parts")}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm"
-              >
-                <Package className="h-4 w-4" />
-                <span>ระบบคลังอะไหล่</span>
-              </button>
-              <button
-                onClick={() => navigate("/admin/dashboard")}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm"
-              >
-                <LayoutDashboard className="h-4 w-4" />
-                <span>Admin Dashboard</span>
-              </button>
-            </div>
           </nav>
 
           {/* Mini KPI Summary in Sidebar */}
@@ -1029,7 +1024,7 @@ export default function QCDashboard() {
             </div>
           </div>
 
-          <div className="p-4 sm:p-6 space-y-6 max-w-6xl mx-auto">
+          <div className="p-4 sm:p-6 space-y-6 w-full animate-slide-up">
             {/* Top KPI Cards in Main View */}
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               {[
@@ -1161,7 +1156,7 @@ export default function QCDashboard() {
                           <Button
                             size="sm"
                             className="bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 text-xs font-semibold px-3.5 py-2 shadow-xs transition-all"
-                            onClick={() => navigate(`/qc/record/${item.schedule_id}`)}
+                            onClick={() => navigate(`/qc/record/${item.schedule_id}`, { state: { from: "schedule" } })}
                           >
                             <FileSpreadsheet className="h-3.5 w-3.5" /> ลงเวลาตรวจ
                           </Button>
@@ -1231,7 +1226,11 @@ export default function QCDashboard() {
                           variant="outline"
                           size="sm"
                           className="flex-1 text-xs gap-1"
-                          onClick={() => navigate(`/qc/record/QCS-2026-001`)}
+                          onClick={() => {
+                            const sampleSchedule = schedules.find((s) => s.matrix_template_id === tpl.template_id);
+                            const targetId = sampleSchedule ? sampleSchedule.schedule_id : "QCS-2026-001";
+                            navigate(`/qc/record/${targetId}`, { state: { from: "templates" } });
+                          }}
                         >
                           <Eye className="h-3.5 w-3.5" /> ดูตัวอย่างแบบฟอร์ม
                         </Button>
@@ -1308,7 +1307,7 @@ export default function QCDashboard() {
           onClose={() => setSelectedSchedule(null)}
           onCheckIn={handleCheckIn}
           onCheckOut={handleCheckOut}
-          onViewRecord={(id) => navigate(`/qc/record/${id}`)}
+          onViewRecord={(id) => navigate(`/qc/record/${id}`, { state: { from: "schedule" } })}
         />
       )}
     </div>

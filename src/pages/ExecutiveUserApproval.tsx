@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Users, ArrowLeft, LogOut, CheckCircle2, XCircle, Clock,
+  Users, ArrowLeft, CheckCircle2, XCircle, Clock,
   Shield, UserCheck, Building2, BadgeCheck, Eye,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";

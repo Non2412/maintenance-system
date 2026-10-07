@@ -5,6 +5,12 @@
 /* CMMS Industrial Design System — All colors HSL */
 
 @layer base {
+  html, body, #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
   html {
     scrollbar-gutter: stable;
   }

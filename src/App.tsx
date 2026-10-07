@@ -62,7 +62,7 @@ const App = () => (
             <Route path="/executive/user-approval" element={<ExecutiveUserApproval />} />
             {/* Superadmin */}
             <Route path="/superadmin/dashboard" element={<SuperadminDashboard />} />
-            <Route path="/superadmin/users" element={<SuperadminUserManagement />} />
+            <Route path="/superadmin/users" element={<Navigate to="/superadmin/dashboard?tab=users" replace />} />
             <Route path="/superadmin/work-requests" element={<Navigate to="/superadmin/dashboard?tab=work-requests" replace />} />
             <Route path="/superadmin/spare-parts" element={<Navigate to="/superadmin/dashboard?tab=spare-parts" replace />} />
             <Route path="/superadmin/approvals" element={<Navigate to="/superadmin/dashboard?tab=approvals" replace />} />

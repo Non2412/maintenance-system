@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  TrendingUp, LogOut, BarChart3, AlertTriangle, Clock,
+  TrendingUp, BarChart3, AlertTriangle, Clock,
   CheckCircle2, Package, Activity, Wrench, Users,
   DollarSign, Target, ArrowUp, ArrowDown, Minus,
   ShieldCheck, LayoutDashboard,

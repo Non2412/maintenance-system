@@ -2,8 +2,8 @@ import { useState, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   TrendingUp, LogOut, BarChart3, Package, Users, Menu, X,
-  ShieldCheck, LayoutDashboard, ChevronRight, DollarSign,
-  Clock, CheckCircle2, AlertTriangle, Wrench, ShoppingCart,
+  ChevronRight, DollarSign,
+  Clock, CheckCircle2, AlertTriangle, ShoppingCart,
   Layers, Building2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -111,15 +111,6 @@ export default function ExecutiveLayout({
                 สิทธิ์รออนุมัติ: {pendingUserApproval}
               </span>
             )}
-
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-primary-foreground hover:bg-white/10"
-              onClick={() => navigate("/")}
-            >
-              <LogOut className="h-5 w-5" />
-            </Button>
           </div>
         </div>
       </header>
@@ -211,41 +202,6 @@ export default function ExecutiveLayout({
                 </button>
               );
             })}
-
-            {/* Other Factory Departments */}
-            <div className="pt-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-sidebar-foreground/40 px-3 py-2">
-                ส่วนงานในโรงงาน
-              </p>
-              <button
-                onClick={() => navigate("/qc/dashboard")}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm"
-              >
-                <ShieldCheck className="h-4 w-4" />
-                <span>ศูนย์ควบคุมคุณภาพ (QC)</span>
-              </button>
-              <button
-                onClick={() => navigate("/admin/dashboard")}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm"
-              >
-                <LayoutDashboard className="h-4 w-4" />
-                <span>Admin Dashboard</span>
-              </button>
-              <button
-                onClick={() => navigate("/spare-parts")}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm"
-              >
-                <Package className="h-4 w-4" />
-                <span>ระบบคลังอะไหล่</span>
-              </button>
-              <button
-                onClick={() => navigate("/board")}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm"
-              >
-                <Wrench className="h-4 w-4" />
-                <span>กระดานช่างซ่อม</span>
-              </button>
-            </div>
           </nav>
 
           {/* Quick Metrics Widget in Sidebar */}
@@ -290,7 +246,7 @@ export default function ExecutiveLayout({
             {actions && <div className="flex items-center gap-2">{actions}</div>}
           </div>
 
-          <div className="p-4 sm:p-6 max-w-7xl mx-auto w-full">
+          <div className="p-4 sm:p-6 w-full animate-slide-up">
             {children}
           </div>
         </main>

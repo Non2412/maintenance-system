@@ -966,9 +966,29 @@ export const TECHNICIAN_MAP: Record<string, Technician> = {
   TECH006: {
     technician_id: "TECH006",
     name: "เกรียงไกร ช่างเชื่อม & โครงสร้าง",
-    department: "ฝ่ายซ่อมบำรุง",
+    department: "งานโครงสร้างและโลหะ",
   },
+  TECH007: { technician_id: "TECH007", name: "ไพศาล ช่างทั่วไป", department: "งานบริการอาคาร" },
+  TECH008: { technician_id: "TECH008", name: "ธนวัฒน์ ช่างเครื่องจักร", department: "งานซ่อมบำรุงเครื่องจักร" },
+  TECH009: { technician_id: "TECH009", name: "ชัยวัฒน์ ช่างก่อสร้าง", department: "งานโยธาและก่อสร้าง" },
+  TECH010: { technician_id: "TECH010", name: "วินัย ช่างสี", department: "งานสีและเคลือบผิว" },
+  TECH011: { technician_id: "TECH011", name: "กิตติศักดิ์ ช่างยนต์", department: "งานยานพาหนะและโฟล์กลิฟต์" },
+  TECH012: { technician_id: "TECH012", name: "ประเสริฐ ช่างไฮดรอลิก", department: "งานระบบไฮดรอลิก" },
+  TECH013: { technician_id: "TECH013", name: "ธีรพงษ์ ช่างนิวแมติกส์", department: "งานระบบนิวแมติกส์" },
+  TECH014: { technician_id: "TECH014", name: "ชาญชัย ช่างแอร์", department: "งานระบบปรับอากาศ" },
+  TECH015: { technician_id: "TECH015", name: "อนุรักษ์ ช่างเครื่องเสียง", department: "งานระบบสื่อสาร" },
+  TECH016: { technician_id: "TECH016", name: "วีระ ช่างไฟฟ้ากำลัง", department: "งานระบบไฟฟ้า" },
+  TECH017: { technician_id: "TECH017", name: "ภานุวัฒน์ ช่างกลโรงงาน", department: "งานระบบเครื่องกล" },
+  TECH018: { technician_id: "TECH018", name: "อุดม ช่างบำรุงรักษา", department: "งานบำรุงรักษาเชิงป้องกัน" },
+  TECH019: { technician_id: "TECH019", name: "ศักดิ์ดา ช่างโลหะ", department: "งานโครงสร้างและโลหะ" },
+  TECH020: { technician_id: "TECH020", name: "นเรศ ช่างเครน & ลิฟต์", department: "งานระบบลำเลียง" },
+  TECH021: { technician_id: "TECH021", name: "สมคิด ช่างเน็ตเวิร์ก", department: "งานระบบเทคโนโลยี" },
+  TECH022: { technician_id: "TECH022", name: "ทรงพล ช่าง PLC", department: "งานระบบอัตโนมัติ" },
+  TECH023: { technician_id: "TECH023", name: "ยุทธนา ช่างระบบบำบัด", department: "งานระบบสุขาภิบาล" },
+  TECH024: { technician_id: "TECH024", name: "พิพัฒน์ ช่างความปลอดภัย", department: "งานความปลอดภัย" },
 };
+
+export * from "./teamMockData.ts";
 
 export function addTechnician(tech: Technician) {
   TECHNICIAN_MAP[tech.technician_id] = tech;

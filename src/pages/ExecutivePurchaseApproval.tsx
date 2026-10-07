@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Package, ArrowLeft, LogOut, CheckCircle2, XCircle,
+  Package, ArrowLeft, CheckCircle2, XCircle,
   Clock, ChevronRight, AlertTriangle, ShoppingCart, Building2,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";

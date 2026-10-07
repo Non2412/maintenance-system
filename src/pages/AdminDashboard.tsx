@@ -3,6 +3,7 @@ import { useNavigate, useLocation, useSearchParams, useParams } from "react-rout
 import AdminSpareRequests from "./AdminSpareRequests.tsx";
 import TechnicianHistory from "./TechnicianHistory.tsx";
 import TechnicianDetail from "./TechnicianDetail.tsx";
+import TeamSection from "@/components/admin/TeamSection.tsx";
 import Checksheet from "./Checksheet.tsx";
 import {
   BarChart,
@@ -43,6 +44,7 @@ import {
   Search,
   Plus,
   UserPlus,
+  Briefcase,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -85,53 +87,85 @@ const STATUS_BAR_COLOR: Record<string, string> = {
   complete: "#10b981",
 };
 
-// ─── Nav items ────────────────────────────────────────────────────────────────
+// ─── Nav items grouped by category ──────────────────────────────────────────
 type NavKey = "overview" | "pipeline" | "team" | "spare" | "checksheet" | "spare-requests" | "technician-history";
 
-const NAV_ITEMS: { key: NavKey; label: string; sublabel: string; icon: React.ReactNode; href?: string }[] = [
+type NavItem = {
+  key: NavKey;
+  label: string;
+  sublabel: string;
+  icon: React.ReactNode;
+  href?: string;
+};
+
+const ADMIN_NAV_GROUPS: {
+  title: string;
+  icon: React.ReactNode;
+  items: NavItem[];
+}[] = [
   {
-    key: "overview",
-    label: "ภาพรวม",
-    sublabel: "KPIs & กราฟ",
-    icon: <LayoutDashboard className="h-5 w-5" />,
+    title: "ภาพรวม & งานซ่อม",
+    icon: <Activity className="h-3.5 w-3.5 text-blue-400" />,
+    items: [
+      {
+        key: "overview",
+        label: "ภาพรวม",
+        sublabel: "KPIs & กราฟ",
+        icon: <LayoutDashboard className="h-5 w-5" />,
+      },
+      {
+        key: "pipeline",
+        label: "สถานะงาน",
+        sublabel: "Pipeline & งานค้าง",
+        icon: <Activity className="h-5 w-5" />,
+      },
+      {
+        key: "checksheet",
+        label: "เช็คชีท",
+        sublabel: "Compliance & บันทึก",
+        icon: <ClipboardList className="h-5 w-5" />,
+      },
+    ],
   },
   {
-    key: "pipeline",
-    label: "สถานะงาน",
-    sublabel: "Pipeline & งานค้าง",
-    icon: <Activity className="h-5 w-5" />,
+    title: "ทีมช่าง & รายงาน",
+    icon: <Users className="h-3.5 w-3.5 text-sky-400" />,
+    items: [
+      {
+        key: "team",
+        label: "ทีมช่าง",
+        sublabel: "ประสิทธิภาพ",
+        icon: <Users className="h-5 w-5" />,
+      },
+      {
+        key: "technician-history",
+        label: "ประวัติช่าง",
+        sublabel: "Timeline & รายงาน",
+        icon: <History className="h-5 w-5" />,
+      },
+    ],
   },
   {
-    key: "team",
-    label: "ทีมช่าง",
-    sublabel: "ประสิทธิภาพ",
-    icon: <Users className="h-5 w-5" />,
-  },
-  {
-    key: "spare",
-    label: "อะไหล่",
-    sublabel: "สต็อก & การใช้งาน",
-    icon: <Package className="h-5 w-5" />,
-  },
-  {
-    key: "checksheet",
-    label: "เช็คชีท",
-    sublabel: "Compliance & บันทึก",
-    icon: <ClipboardList className="h-5 w-5" />,
-  },
-  {
-    key: "spare-requests",
-    label: "ขออะไหล่",
-    sublabel: "คำขอจากช่าง",
-    icon: <ShieldAlert className="h-5 w-5" />,
-  },
-  {
-    key: "technician-history",
-    label: "ประวัติช่าง",
-    sublabel: "Timeline & รายงาน",
-    icon: <History className="h-5 w-5" />,
+    title: "จัดการอะไหล่",
+    icon: <Package className="h-3.5 w-3.5 text-amber-400" />,
+    items: [
+      {
+        key: "spare",
+        label: "อะไหล่",
+        sublabel: "สต็อก & การใช้งาน",
+        icon: <Package className="h-5 w-5" />,
+      },
+      {
+        key: "spare-requests",
+        label: "ขออะไหล่",
+        sublabel: "คำขอจากช่าง",
+        icon: <ShieldAlert className="h-5 w-5" />,
+      },
+    ],
   },
 ];
+
+const NAV_ITEMS: NavItem[] = ADMIN_NAV_GROUPS.flatMap((g) => g.items);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function hoursAgo(iso: string): number {
@@ -563,382 +597,6 @@ function PipelineSection({
   );
 }
 
-function TeamSection({
-  techPerf,
-  navigate,
-  onNavigateNav,
-}: {
-  techPerf: ReturnType<typeof useTechPerf>;
-  navigate: (p: string) => void;
-  onNavigateNav?: (key: NavKey) => void;
-}) {
-  const [extraTechs, setExtraTechs] = useState<Technician[]>([]);
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"all" | "active" | "available">("all");
-  const [sort, setSort] = useState<"pending" | "completion" | "total" | "name">("pending");
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const [newId, setNewId] = useState("");
-  const [newName, setNewName] = useState("");
-  const [newDept, setNewDept] = useState("ฝ่ายซ่อมบำรุง");
-
-  const allTechPerf = useMemo(() => {
-    const map = new Map<string, (typeof techPerf)[0]>();
-    techPerf.forEach((p) => map.set(p.id, p));
-    extraTechs.forEach((t) => {
-      if (!map.has(t.technician_id)) {
-        map.set(t.technician_id, {
-          id: t.technician_id,
-          name: t.name,
-          department: t.department,
-          total: 0,
-          done: 0,
-          inProgress: 0,
-          pending: 0,
-        });
-      }
-    });
-    return Array.from(map.values());
-  }, [techPerf, extraTechs]);
-
-  // KPI Calculations
-  const totalCount = allTechPerf.length;
-  const activeCount = allTechPerf.filter((t) => t.pending > 0 || t.inProgress > 0).length;
-  const availableCount = allTechPerf.filter((t) => t.pending === 0 && t.inProgress === 0).length;
-  const totalJobs = allTechPerf.reduce((s, t) => s + t.total, 0);
-  const totalDone = allTechPerf.reduce((s, t) => s + t.done, 0);
-  const avgCompletion = totalJobs > 0 ? Math.round((totalDone / totalJobs) * 100) : 0;
-
-  // Filter & Search
-  const filteredTechs = useMemo(() => {
-    return allTechPerf
-      .filter((t) => {
-        const matchesSearch =
-          t.name.toLowerCase().includes(search.toLowerCase()) ||
-          t.id.toLowerCase().includes(search.toLowerCase());
-        if (!matchesSearch) return false;
-
-        if (filter === "active") return t.pending > 0 || t.inProgress > 0;
-        if (filter === "available") return t.pending === 0 && t.inProgress === 0;
-        return true;
-      })
-      .sort((a, b) => {
-        if (sort === "pending") return (b.pending + b.inProgress) - (a.pending + a.inProgress);
-        if (sort === "completion") {
-          const pctA = a.total > 0 ? a.done / a.total : 0;
-          const pctB = b.total > 0 ? b.done / b.total : 0;
-          return pctB - pctA;
-        }
-        if (sort === "total") return b.total - a.total;
-        if (sort === "name") return a.name.localeCompare(b.name, "th");
-        return 0;
-      });
-  }, [allTechPerf, search, filter, sort]);
-
-  const handleOpenAdd = () => {
-    const nextNum = allTechPerf.length + 1;
-    setNewId(`TECH${String(nextNum).padStart(3, "0")}`);
-    setNewName("");
-    setNewDept("ฝ่ายซ่อมบำรุง");
-    setIsAddOpen(true);
-  };
-
-  const handleSaveAdd = () => {
-    if (!newName.trim() || !newId.trim()) return;
-    const newTech: Technician = {
-      technician_id: newId.trim().toUpperCase(),
-      name: newName.trim(),
-      department: newDept.trim(),
-    };
-    addTechnician(newTech);
-    setExtraTechs((prev) => [...prev, newTech]);
-    setIsAddOpen(false);
-  };
-
-  return (
-    <div className="space-y-6">
-      {/* ── Mini KPI Overview Cards ────────────────────────────────────────── */}
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
-        {[
-          { label: "ช่างทั้งหมด", value: `${totalCount} คน`, icon: <Users className="h-4 w-4 text-indigo-500" />, b: "border-l-indigo-500" },
-          { label: "กำลังปฏิบัติงาน", value: `${activeCount} คน`, icon: <Wrench className="h-4 w-4 text-amber-500" />, b: "border-l-amber-500" },
-          { label: "พร้อมรับงาน (ว่าง)", value: `${availableCount} คน`, icon: <CheckCircle2 className="h-4 w-4 text-emerald-500" />, b: "border-l-emerald-500" },
-          { label: "อัตราปิดงานเฉลี่ย", value: `${avgCompletion}%`, icon: <TrendingUp className="h-4 w-4 text-sky-500" />, b: "border-l-sky-500" },
-        ].map((k) => (
-          <Card key={k.label} className={cn("p-4 border-l-4 hover:shadow-sm transition-shadow", k.b)}>
-            <div className="flex items-center justify-between">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{k.label}</p>
-              {k.icon}
-            </div>
-            <p className="text-2xl font-bold tabular-nums mt-1">{k.value}</p>
-          </Card>
-        ))}
-      </div>
-
-      {/* ── Chart Card with horizontal scroll capability ───────────────────── */}
-      <Card className="p-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-          <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              งานที่รับผิดชอบแต่ละคน
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              แสดงสถิติการรับงาน, งานที่เสร็จแล้ว และงานที่อยู่ระหว่างดำเนินการ
-            </p>
-          </div>
-          <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-md w-fit">
-            ทีมช่างทั้งหมด {allTechPerf.length} คน
-          </span>
-        </div>
-        <div className="overflow-x-auto pb-2 -mx-2 px-2">
-          <div style={{ minWidth: `${Math.max(500, allTechPerf.length * 85)}px`, height: 210 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={allTechPerf.map((t) => ({
-                  name: t.name,
-                  รับงาน: t.total,
-                  เสร็จ: t.done,
-                  ดำเนินการ: t.inProgress,
-                }))}
-                margin={{ top: 8, right: 12, left: -16, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(215 18% 87%)" />
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} allowDecimals={false} />
-                <Tooltip content={<ChartTooltip />} />
-                <Bar dataKey="รับงาน" fill="hsl(215 60% 40%)" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="เสร็จ" fill="hsl(142 65% 38%)" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="ดำเนินการ" fill="hsl(38 92% 50%)" radius={[3, 3, 0, 0]} />
-                <Legend iconType="circle" iconSize={8} formatter={(v) => <span style={{ fontSize: 11 }}>{v}</span>} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </Card>
-
-      {/* ── Toolbar: Search, Filter, Sort, Add Technician ─────────────────── */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        {/* Left: Search input & filter */}
-        <div className="flex flex-1 flex-wrap items-center gap-2">
-          <div className="relative flex-1 min-w-[200px] max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="ค้นหาชื่อช่าง หรือรหัส (เช่น TECH001)..."
-              className="pl-9 h-9 text-xs sm:text-sm bg-card"
-            />
-          </div>
-
-          <div className="flex items-center gap-1 bg-muted p-1 rounded-lg">
-            {[
-              { key: "all", label: `ทั้งหมด (${totalCount})` },
-              { key: "active", label: `ปฏิบัติงาน (${activeCount})` },
-              { key: "available", label: `พร้อมรับงาน (${availableCount})` },
-            ].map((f) => (
-              <button
-                key={f.key}
-                onClick={() => setFilter(f.key as "all" | "active" | "available")}
-                className={cn(
-                  "px-2.5 py-1 text-xs font-medium rounded-md transition-all whitespace-nowrap",
-                  filter === f.key
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Right: Sort & Add Technician */}
-        <div className="flex items-center gap-2 shrink-0">
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value as "pending" | "completion" | "total" | "name")}
-            className="h-9 rounded-lg border border-border bg-card px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary font-medium"
-          >
-            <option value="pending">เรียง: งานค้างมากสุด</option>
-            <option value="completion">เรียง: อัตราปิดงานสูงสุด</option>
-            <option value="total">เรียง: รับงานทั้งหมด</option>
-            <option value="name">เรียง: ชื่อ ก-ฮ</option>
-          </select>
-
-          <Button
-            size="sm"
-            onClick={handleOpenAdd}
-            className="gap-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs h-9 font-medium shadow-sm"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span>เพิ่มช่าง</span>
-          </Button>
-        </div>
-      </div>
-
-      {/* ── Technician Cards Grid ─────────────────────────────────────────── */}
-      {filteredTechs.length === 0 ? (
-        <Card className="p-8 text-center space-y-3">
-          <p className="text-muted-foreground text-sm">ไม่พบข้อมูลช่างตามเงื่อนไขที่ค้นหา</p>
-          <Button variant="outline" size="sm" onClick={() => { setSearch(""); setFilter("all"); }}>
-            ล้างตัวกรอง
-          </Button>
-        </Card>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredTechs.map((tech) => {
-            const pct = tech.total > 0 ? Math.round((tech.done / tech.total) * 100) : 0;
-            const isBusy = tech.pending > 0 || tech.inProgress > 0;
-            return (
-              <Card key={tech.id} className="p-5 space-y-4 hover:shadow-md transition-shadow border-slate-200/80">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="h-10 w-10 rounded-full bg-gradient-primary grid place-items-center text-primary-foreground font-bold text-sm shrink-0 shadow-sm">
-                      {tech.name.charAt(0)}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-sm truncate">{tech.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{tech.id} · {tech.department}</p>
-                    </div>
-                  </div>
-                  {isBusy ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full shrink-0">
-                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                      ปฏิบัติงาน
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full shrink-0">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                      พร้อมรับงาน
-                    </span>
-                  )}
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-muted-foreground">อัตราปิดงาน</span>
-                    <span className="font-semibold tabular-nums">{pct}%</span>
-                  </div>
-                  <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                    <div
-                      className={cn(
-                        "h-full rounded-full transition-all duration-700",
-                        pct >= 80 ? "bg-emerald-500" : pct >= 50 ? "bg-amber-500" : "bg-indigo-500"
-                      )}
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                  <div className="rounded-md bg-muted/60 py-2">
-                    <p className="text-base font-bold tabular-nums text-foreground">{tech.total}</p>
-                    <p className="text-muted-foreground text-[11px]">รับงาน</p>
-                  </div>
-                  <div className="rounded-md bg-emerald-50 py-2 border border-emerald-100">
-                    <p className="text-base font-bold text-emerald-700 tabular-nums">{tech.done}</p>
-                    <p className="text-emerald-600 text-[11px]">เสร็จ</p>
-                  </div>
-                  <div className="rounded-md bg-amber-50 py-2 border border-amber-100">
-                    <p className="text-base font-bold text-amber-700 tabular-nums">{tech.pending}</p>
-                    <p className="text-amber-600 text-[11px]">ค้างงาน</p>
-                  </div>
-                </div>
-
-                <button
-                  className="w-full flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-medium border-slate-200 text-slate-800 hover:bg-slate-50 transition-colors"
-                  onClick={() => navigate(`/admin/technician/${tech.id}`, { state: { from: "team" } })}
-                >
-                  ดูรายละเอียด <ChevronRight className="h-3.5 w-3.5" />
-                </button>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-
-      {/* ── Add Technician Modal ─────────────────────────────────────────── */}
-      {isAddOpen && (
-        <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <Card className="w-full max-w-md p-5 space-y-4 shadow-xl border bg-card animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-3 border-b">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-primary/10 grid place-items-center text-primary font-bold">
-                  <UserPlus className="h-4 w-4" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-sm">เพิ่มช่างใหม่ในระบบ</h3>
-                  <p className="text-xs text-muted-foreground">บันทึกข้อมูลช่างเพื่อพร้อมจ่ายงานและติดตามผลงาน</p>
-                </div>
-              </div>
-              <button onClick={() => setIsAddOpen(false)} className="text-muted-foreground hover:text-foreground">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="font-semibold text-muted-foreground mb-1 block">รหัสช่าง (Employee ID) *</label>
-                <Input
-                  value={newId}
-                  onChange={(e) => setNewId(e.target.value)}
-                  placeholder="เช่น TECH007"
-                  className="h-9 text-xs"
-                />
-              </div>
-              <div>
-                <label className="font-semibold text-muted-foreground mb-1 block">ชื่อ - นามสกุล *</label>
-                <Input
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder="เช่น เกียรติศักดิ์ ช่างเครื่อง"
-                  className="h-9 text-xs"
-                />
-              </div>
-              <div>
-                <label className="font-semibold text-muted-foreground mb-1 block">แผนก / ความเชี่ยวชาญ</label>
-                <Input
-                  value={newDept}
-                  onChange={(e) => setNewDept(e.target.value)}
-                  placeholder="เช่น ฝ่ายซ่อมบำรุง / เครื่องกล"
-                  className="h-9 text-xs"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <Button variant="outline" className="flex-1 text-xs h-9" onClick={() => setIsAddOpen(false)}>
-                ยกเลิก
-              </Button>
-              <Button
-                className="flex-1 text-xs h-9 bg-slate-800 hover:bg-slate-900 text-white"
-                onClick={handleSaveAdd}
-                disabled={!newName.trim() || !newId.trim()}
-              >
-                บันทึกช่างใหม่
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* ── Bottom Link Card ────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row items-center justify-between p-4 rounded-xl border bg-card gap-3 shadow-sm">
-        <div>
-          <p className="text-sm font-semibold">ประวัติและ Timeline การทำงานของช่างทั้งหมด</p>
-          <p className="text-xs text-muted-foreground">ดูรายงานการปิดงาน, เวลาที่ใช้ และอะไหล่ที่เบิกระดับช่างรายบุคคล</p>
-        </div>
-        <Button
-          onClick={() => (onNavigateNav ? onNavigateNav("technician-history") : navigate("/admin/technician-history"))}
-          className="gap-1.5 shrink-0"
-          size="sm"
-        >
-          <History className="h-4 w-4" /> ดูประวัติการทำงาน <ArrowRight className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
-  );
-}
-
 // ─── Custom hooks for data ────────────────────────────────────────────────────
 function useKpi(requests: WorkRequest[]) {
   return useMemo(() => {
@@ -1273,7 +931,7 @@ export default function AdminDashboard({ defaultTab }: AdminDashboardProps = {})
   const activeNavItem = NAV_ITEMS.find((n) => n.key === activeNav) || NAV_ITEMS[0];
 
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden">
+    <div className="fixed inset-0 flex flex-col bg-background overflow-hidden">
       {/* ── Top Header ─────────────────────────────────────────────────────── */}
       <header className="shrink-0 z-30 bg-gradient-primary text-primary-foreground shadow-md">
         <div className="px-4 py-3 flex items-center gap-3">
@@ -1308,10 +966,6 @@ export default function AdminDashboard({ defaultTab }: AdminDashboardProps = {})
               ทั้งหมด {kpi.total} งาน
             </span>
           </div>
-
-          <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/10" onClick={() => navigate("/")} aria-label="ออกจากระบบ">
-            <LogOut className="h-5 w-5" />
-          </Button>
         </div>
       </header>
 
@@ -1356,51 +1010,56 @@ export default function AdminDashboard({ defaultTab }: AdminDashboardProps = {})
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 min-h-0 p-3 space-y-1 overflow-y-auto">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-sidebar-foreground/40 px-3 py-2">
-              เมนูหลัก
-            </p>
-            {NAV_ITEMS.map((item) => {
-              const isActive = activeNav === item.key;
-              const pendingBadge = item.key === "spare-requests" ? MOCK_SPARE_PART_REQUESTS.filter(r => r.status === "pending").length : 0;
-              return (
-                <button
-                  key={item.key}
-                  onClick={() => handleNavSelect(item.key)}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150",
-                    isActive
-                      ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
-                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                  )}
-                >
-                  <span className={cn("shrink-0", isActive ? "text-sidebar-primary-foreground" : "text-sidebar-foreground/60")}>
-                    {item.icon}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium">{item.label}</p>
-                      {pendingBadge > 0 && (
-                        <span
-                          className={cn(
-                            "min-w-5 h-5 px-1.5 rounded-full text-[11px] font-bold flex items-center justify-center shadow-sm transition-all",
-                            isActive
-                              ? "bg-red-500 text-white ring-2 ring-white"
-                              : "bg-red-500 text-white ring-1 ring-white/20"
-                          )}
-                        >
-                          {pendingBadge}
-                        </span>
+          <nav className="flex-1 min-h-0 p-3 space-y-3 overflow-y-auto">
+            {ADMIN_NAV_GROUPS.map((group, groupIdx) => (
+              <div key={group.title} className={cn("space-y-1", groupIdx > 0 && "pt-2.5 border-t border-sidebar-border/40")}>
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-sidebar-foreground/50 px-3 py-1 flex items-center gap-1.5">
+                  <span className="shrink-0">{group.icon}</span>
+                  <span>{group.title}</span>
+                </p>
+                {group.items.map((item) => {
+                  const isActive = activeNav === item.key;
+                  const pendingBadge = item.key === "spare-requests" ? MOCK_SPARE_PART_REQUESTS.filter(r => r.status === "pending").length : 0;
+                  return (
+                    <button
+                      key={item.key}
+                      onClick={() => handleNavSelect(item.key)}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150",
+                        isActive
+                          ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm font-semibold"
+                          : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                       )}
-                    </div>
-                    <p className={cn("text-[11px] truncate", isActive ? "text-sidebar-primary-foreground/70" : "text-sidebar-foreground/50")}>
-                      {item.sublabel}
-                    </p>
-                  </div>
-                  {isActive && <ChevronRight className="h-4 w-4 ml-auto shrink-0" />}
-                </button>
-              );
-            })}
+                    >
+                      <span className={cn("shrink-0", isActive ? "text-sidebar-primary-foreground" : "text-sidebar-foreground/60")}>
+                        {item.icon}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium">{item.label}</p>
+                          {pendingBadge > 0 && (
+                            <span
+                              className={cn(
+                                "min-w-5 h-5 px-1.5 rounded-full text-[11px] font-bold flex items-center justify-center shadow-sm transition-all",
+                                isActive
+                                  ? "bg-red-500 text-white ring-2 ring-white"
+                                  : "bg-red-500 text-white ring-1 ring-white/20"
+                              )}
+                            >
+                              {pendingBadge}
+                            </span>
+                          )}
+                        </div>
+                        <p className={cn("text-[11px] truncate", isActive ? "text-sidebar-primary-foreground/70" : "text-sidebar-foreground/50")}>
+                          {item.sublabel}
+                        </p>
+                      </div>
+                      {isActive && <ChevronRight className="h-4 w-4 ml-auto shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
           </nav>
 
           {/* Mini KPI summary at bottom */}
@@ -1437,69 +1096,72 @@ export default function AdminDashboard({ defaultTab }: AdminDashboardProps = {})
         {/* ── Main Content ─────────────────────────────────────────────────── */}
         <main className="flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden">
           {/* Page title bar */}
-          <div className="sticky top-0 z-10 bg-background/90 backdrop-blur border-b px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-3">
-              {isChecksheetSystem ? (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleChecksheetBack}
-                    className="gap-1.5 -ml-1 sm:-ml-2 text-xs font-medium text-muted-foreground hover:text-foreground h-9 px-2.5 sm:px-3"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                    ย้อนกลับ
-                  </Button>
-                  <div className="h-4 w-px bg-border" />
-                  <div className="h-6 w-6 rounded grid place-items-center text-primary shrink-0">
-                    <ClipboardList className="h-5 w-5" />
+          {!isTechDetail && (
+            <div className="sticky top-0 z-10 bg-background/90 backdrop-blur border-b px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                {isChecksheetSystem ? (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleChecksheetBack}
+                      className="gap-1.5 -ml-1 sm:-ml-2 text-xs font-medium text-muted-foreground hover:text-foreground h-9 px-2.5 sm:px-3 shrink-0"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      ย้อนกลับ
+                    </Button>
+                    <div className="h-4 w-px bg-border shrink-0" />
+                    <div className="h-6 w-6 rounded grid place-items-center text-primary shrink-0">
+                      <ClipboardList className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <h2 className="font-semibold text-sm leading-none truncate">
+                        ระบบเช็คชีท
+                      </h2>
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                        จัดการ Template & บันทึกการตรวจสอบ
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="h-6 w-6 rounded grid place-items-center text-primary shrink-0">{activeNavItem.icon}</div>
+                    <div className="min-w-0">
+                      <h2 className="font-semibold text-sm leading-none truncate">{activeNavItem.label}</h2>
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">{activeNavItem.sublabel}</p>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Right-side summary stat pills for Team tab */}
+              {activeNav === "team" && (
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="bg-card rounded-lg border border-border px-2.5 sm:px-3 py-1 sm:py-1.5 flex items-center gap-2 sm:gap-2.5 shadow-2xs">
+                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-md bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                      <Users className="h-3.5 w-3.5" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground font-medium leading-none">ช่างทั้งหมด</p>
+                      <p className="text-xs font-bold text-foreground tabular-nums leading-tight mt-0.5">24 คน</p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <h2 className="font-semibold text-sm leading-none truncate">
-                      ระบบเช็คชีท
-                    </h2>
-                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                      จัดการ Template & บันทึกการตรวจสอบ
-                    </p>
+
+                  <div className="bg-card rounded-lg border border-border px-2.5 sm:px-3 py-1 sm:py-1.5 flex items-center gap-2 sm:gap-2.5 shadow-2xs">
+                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-md bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                      <Briefcase className="h-3.5 w-3.5" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground font-medium leading-none">งานทั้งหมด</p>
+                      <p className="text-xs font-bold text-foreground tabular-nums leading-tight mt-0.5">42 งาน</p>
+                    </div>
                   </div>
-                </>
-              ) : isTechDetail ? (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleTechDetailBack}
-                    className="gap-1.5 -ml-1 sm:-ml-2 text-xs font-medium text-muted-foreground hover:text-foreground h-9 px-2.5 sm:px-3"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                    ย้อนกลับ
-                  </Button>
-                  <div className="h-4 w-px bg-border" />
-                  <div className="h-6 w-6 rounded grid place-items-center text-primary shrink-0">
-                    <Users className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <h2 className="font-semibold text-sm leading-none truncate">
-                      {techId && TECHNICIAN_MAP[techId]?.name ? `รายละเอียดช่าง: ${TECHNICIAN_MAP[techId].name}` : "รายละเอียดช่าง"}
-                    </h2>
-                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                      {techId && TECHNICIAN_MAP[techId]?.department ? `${TECHNICIAN_MAP[techId].department} · ${techId}` : "ประวัติและผลงานรายบุคคล"}
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="h-6 w-6 rounded grid place-items-center text-primary shrink-0">{activeNavItem.icon}</div>
-                  <div className="min-w-0">
-                    <h2 className="font-semibold text-sm leading-none truncate">{activeNavItem.label}</h2>
-                    <p className="text-xs text-muted-foreground mt-0.5 truncate">{activeNavItem.sublabel}</p>
-                  </div>
-                </>
+                </div>
               )}
             </div>
-          </div>
+          )}
 
-          <div className="p-4 sm:p-6 animate-slide-up">
+          <div className="p-3.5 sm:p-5 lg:p-6 animate-slide-up">
             {isChecksheetSystem ? (
               <Checksheet
                 embedded
@@ -1519,7 +1181,13 @@ export default function AdminDashboard({ defaultTab }: AdminDashboardProps = {})
                 {activeNav === "pipeline" && (
                   <PipelineSection statusPipeline={statusPipeline} urgentJobs={urgentJobs} maxPipelineCount={maxPipelineCount} />
                 )}
-                {activeNav === "team" && <TeamSection techPerf={techPerf} navigate={navigate} onNavigateNav={handleNavSelect} />}
+                {activeNav === "team" && (
+                  <TeamSection
+                    onViewDetail={(techId) =>
+                      navigate(`/admin/technician/${techId}`, { state: { from: "team" } })
+                    }
+                  />
+                )}
                 {activeNav === "spare" && <SpareSection navigate={navigate} onNavigateNav={handleNavSelect} />}
                 {activeNav === "checksheet" && <ChecksheetSection navigate={navigate} />}
                 {activeNav === "spare-requests" && <AdminSpareRequests embedded />}
